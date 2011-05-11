@@ -252,9 +252,9 @@ process.shifts<-function(phy, shifts, level) {
 	branches=branches.tmp[branches.tmp>=level]
 	branches=branches[order(branches, decreasing=TRUE)]
 	nn=as.numeric(names(branches))
-	desc=lapply(nn, function(x) {y=get.descendants.of.node(x, phy=phy, tips=TRUE); if(length(y)) return(phy$tip.label[y]) else return(NULL)})
-	names(desc)=nn
 	if(length(nn) & any(!is.na(nn))) {
+		desc=lapply(nn, function(x) {y=get.descendants.of.node(x, phy=phy, tips=TRUE); if(length(y)) return(phy$tip.label[y]) else return(NULL)})
+		names(desc)=nn		
 		di=sapply(nn, function(x) if(x>Ntip(phy)) return(TRUE) else return(FALSE))
 		if(any(di)) desc=desc[di] else desc=NULL
 	} else {

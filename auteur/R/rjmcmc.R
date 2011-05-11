@@ -42,7 +42,7 @@ rjmcmc.bm <- function (	phy, dat, SE=0, ngen=1000, sample.freq=100,
 		init.rate	<- generate.starting.point(orig.dat, ape.tre, node.des, logspace=TRUE, K=constrainK, prop.width=prop.width )
 	}
 	
-	if(is.null(prior.rate)) prior.rate	<- fit.continuous(ape.tre,orig.dat)
+	if(is.null(prior.rate)) prior.rate	<- 10
 		
     cur.rates		<- init.rate$values			
 	cur.delta.rates	<- init.rate$delta

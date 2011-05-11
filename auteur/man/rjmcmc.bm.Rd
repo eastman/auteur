@@ -13,7 +13,7 @@
   \item{prob.root}{proportion of proposals in which the root state is updated}
   \item{lambdaK}{the shape parameter for the Poisson prior-distribution on number of distinct rates}
   \item{tuner}{value between 0 and 1, determining the proportion of sliding-window rate-proposals (rather than multiplier proposals)} 
-  \item{prior.rate}{the mean of the exponential used as a prior distribution on rates; if null, the MLE for a single-rate model is used}
+  \item{prior.rate}{the mean of the exponential used as a prior distribution on rates; if null, a mean of 10 is used}
   \item{constrainK}{a constraint of model complexity (e.g., \code{constrainK=2} restricts sampling to models with two independent rates)}
   \item{prop.width}{if \code{NULL}, the proposal width is calibrated; otherwise, proposal width is constrained to the supplied value}
   \item{simplestart}{if \code{FALSE}, a random model complexity is chosen; if \code{TRUE}, Markov sampling begins under a global-rate model}
