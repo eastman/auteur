@@ -1,23 +1,19 @@
-\name{rjmcmc.bm}
-\alias{rjmcmc.bm}
-\title{Bayesian sampling of shifts in trait-evolutionary rates: Brownian motion}
-\description{Implements reversible-jump Markov chain Monte Carlo sampling to identify shifts in the process of continuous trait evolution across phylogenetic trees}
-\usage{rjmcmc.bm(phy, dat, SE=0, ngen = 1000, sample.freq = 100, prob.mergesplit = 0.20, prob.root = 0.05, lambdaK = log(2), tuner = 0.05, prior.rate = NULL, constrainK = FALSE, prop.width = NULL, simplestart = FALSE, internal.only = FALSE, summary = TRUE, fileBase = "result")}
+\name{mcmc.levy}
+\alias{mcmc.levy}
+\title{Bayesian sampling of shifts in trait-evolutionary rates: jump-diffusion}
+\description{Implements Markov chain Monte Carlo sampling to identify shifts in the process of continuous trait evolution across phylogenetic trees}
+\usage{mcmc.levy(phy, dat, SE=0, ngen = 1000, sample.freq = 100, prob.lambda = 0.75, prob.sigsqB = 0.075, prob.sigsqJ = 0.15, prop.width = NULL, lambdaN = log(2), summary = TRUE, fileBase = "result")}
 \arguments{
   \item{phy}{a phylogenetic tree of class 'phylo'}
   \item{dat}{a named vector of continuous trait values, associated with each species in \code{phy}; see \code{\link[geiger]{name.check}}}
   \item{SE}{a named vector of standard errors for each trait value; applied to all trait values if given a single value}
   \item{ngen}{number of sampling generations}
   \item{sample.freq}{frequency with which Markov samples are retained (e.g., \code{sample.freq=10} retains every tenth sample in the chain)}
-  \item{prob.mergesplit}{proportion of proposals that split or merge rates, thereby altering complexity of the evolutionary model}
-  \item{prob.root}{proportion of proposals in which the root state is updated}
-  \item{lambdaK}{the shape parameter for the Poisson prior-distribution on number of distinct rates}
-  \item{tuner}{value between 0 and 1, determining the proportion of sliding-window rate-proposals (rather than multiplier proposals)} 
-  \item{prior.rate}{the mean of the exponential used as a prior distribution on rates; if null, the MLE for a single-rate model is used}
-  \item{constrainK}{a constraint of model complexity (e.g., \code{constrainK=2} restricts sampling to models with two independent rates)}
+  \item{prob.lambda}{proportion of proposals that split or merge rates, thereby altering complexity of the evolutionary model}
+  \item{prob.sigsqB}{proportion of proposals in which the root state is updated}
+  \item{prob.sigsqJ}{a constraint of model complexity (e.g., \code{constrainK=2} restricts sampling to models with two independent rates)}
   \item{prop.width}{if \code{NULL}, the proposal width is calibrated; otherwise, proposal width is constrained to the supplied value}
-  \item{simplestart}{if \code{FALSE}, a random model complexity is chosen; if \code{TRUE}, Markov sampling begins under a global-rate model}
-  \item{internal.only}{dictates whether any branch in the tree can be chosen for a rate shift or tips only (\code{internal.only=FALSE})} 
+  \item{lambdaN}{the shape parameter for the Poisson prior-distribution on number of distinct rates}
   \item{summary}{a logical switch that determines whether any output is printed to the console after the analysis has finished}
   \item{fileBase}{a string used to uniquely identify the base directory to which Markov samples are written}
 }
@@ -45,55 +41,11 @@ Posterior results are written to several files within a base directory, the cont
   \bold{Examples} below. }
 }
 
-\author{LJ Harmon, AL Hipp, and JM Eastman}
+\author{JM Eastman}
 \examples{
 #############
-## generate tree
-n=24
-while(1) {
-	phy=prunelastsplit(birthdeath.tree(b=1,d=0,taxa.stop=n+1))
-	phy$tip.label=paste("sp",1:n,sep="")
-	rphy=reorder(phy,"pruningwise")
-
-	# find an internal edge
-	anc=get.desc.of.node(Ntip(phy)+1,phy)
-	branches=phy$edge[,2]
-	branches=branches[branches>Ntip(phy) & branches!=anc]
-	branch=branches[sample(1:length(branches),1)]
-	desc=get.descendants.of.node(branch,phy)
-	if(length(desc)>=4) break()
-}
-rphy=phy
-rphy$edge.length[match(desc,phy$edge[,2])]=phy$edge.length[match(desc,phy$edge[,2])]*64
-
-e=numeric(nrow(phy$edge))
-e[match(c(branch,desc),phy$edge[,2])]=1
-cols=c("red","gray")
-dev.new()
-plot(phy,edge.col=ifelse(e==1,cols[1],cols[2]), edge.width=2) 
-mtext("expected pattern of rates")
-
-#############
-## simulate data on the 'rate-shifted' tree
-dat=rTraitCont(phy=rphy, model="BM", sigma=sqrt(0.1))
-
-## run two short reversible-jump Markov chains
-r=paste(sample(letters,9,replace=TRUE),collapse="")
-lapply(1:2, function(x) rjmcmc.bm(phy=phy, dat=dat, ngen=10000, sample.freq=10, prob.mergesplit=0.1, simplestart=TRUE, prop.width=1, fileBase=paste(r,x,sep=".")))
-
- # collect directories
-dirs=dir("./",pattern=paste("BM",r,sep="."))
-pool.rjmcmcsamples(base.dirs=dirs, lab=r)
-
-## view contents of .rda
-load(paste(paste(r,"combined.rjmcmc",sep="."),paste(r,"posteriorsamples.rda",sep="."),sep="/"))
-print(head(posteriorsamples$rates))
-print(head(posteriorsamples$rate.shifts))
-
-## plot Markov sampled rates
-dev.new()
-shifts.plot(phy=phy, base=paste(r,"combined.rjmcmc",sep="."), burnin=0.5, legend=TRUE, pdf=FALSE, edge.width=2) 
-
-## PASTE UNCOMMENTED FOLLOWING LINE TO DROP DIRECTORIES CREATED BY RJMCMC
- # unlink(dir(pattern=paste(r)),recursive=TRUE)
+## generate data
+tmp=phenogram(rcoal(200), "levy"); phy=tmp$phy; dat=tmp$dat
+mcmc.levy(phy,dat,prop.width=0.5)
+mcmc.levy(phy,dat)
 }

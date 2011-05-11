@@ -79,7 +79,7 @@ dat=rTraitCont(phy=rphy, model="BM", sigma=sqrt(0.1))
 
 ## run two short reversible-jump Markov chains
 r=paste(sample(letters,9,replace=TRUE),collapse="")
-lapply(1:2, function(x) rjmcmc.bm(phy=phy, dat=dat, ngen=10000, sample.freq=10, prob.mergesplit=0.1, simplestart=TRUE, prop.width=1, fileBase=paste(r,x,sep=".")))
+lapply(1:2, function(x) rjmcmc.bm(phy=phy, dat=dat, ngen=10000, sample.freq=10, prob.mergesplit=0.1, simplestart=FALSE, prop.width=1, fileBase=paste(r,x,sep=".")))
 
  # collect directories
 dirs=dir("./",pattern=paste("BM",r,sep="."))

@@ -1,28 +1,15 @@
 #general statistical function for computing a highest density region (whose proportion is given by 'hpd')
-#author: R FITZ-JOHN 2011 (from diversitree)
+#author: R FITZ-JOHN 2010 (from diversitree)
 
 hdr <-
-function (z, hpd = 0.95, lim = NULL) 
-{
-	hdr.uniroot <-
-	function (z, p = 0.95, lim = NULL) 
-	{
-		xx <- sort(c(lim, seq(min(z), max(z), length = 1024)))
-		ez <- ecdf(z)
-		f <- suppressWarnings(approxfun(ez(xx), xx))
-		fit <- suppressWarnings(optimize(function(x) f(x + p) - f(x), c(0, 1 - p)))
-		if (inherits(fit, "try-error") || is.na(fit$objective)) 
-		stop("HDR interval failure")
-		ci <- fit$min
-		f(c(ci, ci + p))
-	}
-	
-    ci <- try(hdr.uniroot(z, hpd, lim), silent = TRUE)
-    if (inherits(ci, "try-error")) {
-        warning("HDR falling back on quantile-based intervals")
-        ci <- as.numeric(quantile(z, c((1 - hpd)/2, 1/2 + hpd/2)))
-    }
-    ci
+function(z, hpd, lim=NULL){
+	xx <- sort(c(lim, seq(min(z), max(z), length = 1024)))
+	ez <- ecdf(z)
+	f <- suppressWarnings(approxfun(ez(xx), xx))
+	fit <- suppressWarnings(optimize(function(x) f(x + hpd) - f(x), c(0, 1 - hpd)))
+	if (inherits(fit, "try-error") || is.na(fit$objective)) stop("HDR interval failure")
+	ci <- fit$min
+	f(c(ci, ci + hpd))
 }
 
 

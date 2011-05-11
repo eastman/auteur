@@ -1,4 +1,4 @@
-useDynLib(auteur)
+useDynLib(auteurExtended)
 
 export(
 add.transparency,
@@ -36,6 +36,7 @@ oumat,
 ouweights,
 ou.lik.fn,
 levyevolver,
+mcmc.levy,
 parlogger,
 phenogram,
 pool.rjmcmcsamples,
@@ -44,6 +45,7 @@ prunelastsplit,
 ptpois,
 randomization.test,
 rjmcmc.bm,
+rjmcmc.ou,
 rtpois,
 shifts.plot,
 splitormerge,
