@@ -1,0 +1,13 @@
+Package: auteur
+Type: Package
+Title: reversible-jump Bayesian sampler of evolutionary rates
+Version: 0.11.0216
+Date: 2011-02-16
+Author: LJ Harmon, ME Alfaro, AL Hipp, P Joyce, and JM Eastman
+Maintainer: Jonathan Eastman <jonathan.eastman@gmail.com>
+Depends: ape, geiger, colorspace, Rcpp, MCMCglmm
+LinkingTo: Rcpp
+Description: Identifies shifts in process of continuous-trait evolution on phylogenetic trees
+License: GPL (>=2)
+LazyLoad: yes
+Packaged: 2011-02-16 10:17:14 UTC; jeastman

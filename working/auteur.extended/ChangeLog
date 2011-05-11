@@ -1,0 +1,24 @@
+CHANGES IN AUTEUR VERSION 0.11
+
+2011-01-19
+  * updated shifts.plot()
+  * now accommodates measurement error associated with trait values
+
+2011-01-18
+  * added a utility for ultrametricizing trees naively (where root to tip lengths are very close but not identical; see ultrametricize())
+  * modified tracer() to allow user-specification of plotting axes in log-likelihood traces
+  * changed package name from rjmcmc.traits to 'auteur' (Accommodating Uncertainty in Trait Evolution Using rjMCMC)
+
+2011-01-16
+  * converted sortedges to a C++ function (see vmat.cpp)
+
+2011-01-13
+  * variance-covariance calculation now performed using C++: see vmat.R()
+
+2011-01-09 
+  * now storing memory intensive results as (compressed) .rda files
+  * splitormerge(): had treated a global rate as K=1; now assuming that a global rate is not equivalent to a single local rate; now K = 0 for a global-rate model (Drummond and Suchard 2010)
+
+2011-01-07  
+  * created package
+
