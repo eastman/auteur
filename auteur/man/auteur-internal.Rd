@@ -4,6 +4,7 @@
 \alias{adjustrate}
 \alias{adjustvalue}
 \alias{assess.lnR}
+\alias{assigndescendants}
 \alias{bm.lik.fn}
 \alias{branchcol.plot} 
 \alias{choose.one}
@@ -33,11 +34,13 @@
 \alias{parlogger}
 \alias{pathlengths}
 \alias{prepare.data}
+\alias{priorratio.exp}
 \alias{prunelastsplit}
 \alias{ptpois}
 \alias{ou.lik.fn}
 \alias{oumat}
 \alias{ouweights}
+\alias{reshape.localvalues}
 \alias{rtpois}
 \alias{splitormerge}
 \alias{splitrate}
@@ -45,6 +48,7 @@
 \alias{summarize.run}
 \alias{table.print}
 \alias{tree.slide}
+\alias{tree.slide.LEVY}
 \alias{tune.rate}
 \alias{tune.value}
 \alias{updatevcv}

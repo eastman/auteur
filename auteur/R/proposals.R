@@ -48,7 +48,6 @@ function(cur.delta, cur.values, phy, node.des, lambda=lambda, logspace=TRUE, int
 		}
 		new.vv[match(s, names(new.vv))]=nr.desc
 		lnHastingsRatio = log((K+1)/(2*N-2-K)) ### from Drummond and Suchard 2010: where N is tips, K is number of local parms in tree
-#		lnPriorRatio = log(ptpois(K+1,lambda,nn)/ptpois(K,lambda,nn))
 		lnPriorRatio = dpois(K+1,lambda,log=TRUE)-dpois(K,lambda,log=TRUE)
 		
 	} else {							# drop transition: MERGE
@@ -68,24 +67,137 @@ function(cur.delta, cur.values, phy, node.des, lambda=lambda, logspace=TRUE, int
 			new.vv[vv==cur.vv | vv==sis.vv]=nr			
 		}
 		lnHastingsRatio = log((2*N-2-K+1)/K) ### from Drummond and Suchard 2010: where N is tips, K is number of local parms in tree
-#		lnPriorRatio = log(ptpois(K-1,lambda,nn)/ptpois(K,lambda,nn))
 		lnPriorRatio = dpois(K-1,lambda,log=TRUE)-dpois(K,lambda,log=TRUE)
-
-		
 	}
 	
 	return(list(new.delta=new.bb, new.values=new.vv, lnHastingsRatio=lnHastingsRatio, lnPriorRatio=lnPriorRatio, decision=decision))
 }
 
 
+
+#rjmcmc proposal mechanism: locally select a node based on subtended or subtending branch lengths
+#author: JM EASTMAN 2011
+
+tree.slide=function(phy, node, up=NA){
+	if(is.na(up)) up=as.logical(round(runif(1)))
+	root=Ntip(phy)+1
+	if(up){
+		choice.tmp=get.ancestor.of.node(node,phy)
+		if(choice.tmp==root){
+			sisters.tmp=get.desc.of.node(choice.tmp,phy)
+			sisters=sisters.tmp[which(sisters.tmp!=node)]
+			if(length(sisters)==1) {
+				choice=sisters
+				direction="root"
+			} else {
+				sister.edges=phy$edge.length[match(sisters, phy$edge[,2])]
+				see=cumsum(sister.edges)
+				see=see/max(see)
+				choice=sisters[min(which(runif(1)<see))]
+				direction="root"
+			}
+		} else {
+			choice=choice.tmp
+			direction="up"
+		}
+	} else {
+		descendants=get.desc.of.node(node,phy)
+		if(!length(descendants)) {
+			if(runif(1)<0.5) {
+				choice=node
+				direction=NULL
+			} else {
+				choice=tree.slide(phy, node, up=TRUE)$node
+				direction="up"
+			}
+		} else {
+			desc.edges=phy$edge.length[match(descendants, phy$edge[,2])]
+			dee=cumsum(desc.edges)
+			dee=dee/max(dee)
+			choice=descendants[min(which(runif(1)<dee))]
+			direction="down"
+		}
+	}
+	
+	return(list(node=choice, direction=direction))
+}
+
+
+
+#proposal utility: move shift-point in tree 
+#author: JM EASTMAN 2011
+
+reshape.localvalues=function(phy, delta, values){
+	root=Ntip(phy)+1
+	names(delta)<-names(values)<-phy$edge[,2]
+	tmp=as.numeric(names(which(delta==1)))
+	node=tmp[sample(1:length(tmp),1)]
+	val=as.numeric(values[which(names(values)==node)])
+	
+	# select new node
+	tmp=tree.slide(phy, node, up=NA)
+	newnode=tmp$node
+	direction=tmp$direction
+	
+	new.delta=delta
+	new.values=values
+	
+	if(!is.null(direction)){
+		# find all shifts
+		tmp=as.numeric(names(delta[delta>0]))
+		shifts=tmp[tmp!=node]
+		
+		# update delta
+		new.delta[match(c(newnode, node),names(delta))]=1-delta[match(c(newnode, node),names(delta))]
+		
+		if(direction=="up") {
+		   new.values=assigndescendants(values, newnode, val, phy, shifts)
+		} else if(direction=="down") {
+			anc=get.ancestor.of.node(node, phy)
+			if(anc==root){
+				tmp=get.desc.of.node(root, phy)
+				dd=tmp[!tmp%in%c(node,shifts)]
+				anc.val=unique(as.numeric(values[match(dd, names(values))]))
+			} else {
+				anc.val=as.numeric(values[which(names(values)==anc)])
+			}
+			new.values=assigndescendants(values, anc, anc.val, phy, shifts)
+			new.values=assigndescendants(new.values, newnode, val, phy, shifts)
+		} else if(direction=="root"){
+			new.values[which(names(values)==newnode)]=val
+		} else {
+			stop("Direction of shift proposal not found.")
+		}
+		   
+	}
+	
+	return(list(new.delta=new.delta, new.values=new.values))
+}
+	
+
+
+#general phylogenetic utility: recurse down tree changing values of descendants to 'value' until an 'excluded' descendant subtree is reached
+#author: JM EASTMAN 2011
+
+assigndescendants=function(vv, node, value, phy, exclude=NULL){
+	try(vv[match(node, phy$edge[,2])]<-value,TRUE); if(inherits(value, "try-error")) print(list(vv,node,value,exclude))
+	desc=get.desc.of.node(node, phy)
+	desc=desc[!desc%in%exclude]
+	if(length(desc)){
+		for(d in desc) vv=assigndescendants(vv, d, value, phy, exclude=exclude)
+	}
+	return(vv)
+}
+
+
+
 #general phylogenetic utility for selecting one element of a list of values, each of which can be associated with the edges of a phylogeny (phy$edge[,2])
 #author: JM EASTMAN 2011
 
 choose.one <-
-function(cur.delta, phy, internal.only=FALSE)
+function(cur.delta, phy, internal.only=FALSE, edge.prob=0)
 # updated 02.26.2011 to weight by branch length (rather than equal weight for each edge)
 {
-	edge.prob=0.75
 	e=phy$edge.length
 	ee=cumsum(e/sum(e))
 	bb=cur.delta
@@ -106,8 +218,17 @@ function(cur.delta, phy, internal.only=FALSE)
 			s=sample(1:length(bb),1)
 		}
 	}
+	
 	bb[s]=1-bb[s]
-	bb
+	
+	# ensure that at least one descendant of root is unshifted 
+	root.des=get.desc.of.node(Ntip(phy)+1, phy)
+	root.delta=as.logical(bb[match(root.des, phy$edge[,2])])
+	if(all(root.delta)) {
+		return(choose.one(cur.delta, phy, internal.only, edge.prob)) 
+	} else {
+		return(bb)
+	}
 }
 
 
@@ -139,7 +260,7 @@ function(cur.vv, n.desc, n.split, factor=log(2)){
 #author: JM EASTMAN 2010
 
 tune.rate <-
-function(rates, prop.width, min=0, max=Inf, tuner=0.5, prior.mean=log(2)) {
+function(rates, prop.width, min=0, max=Inf, tuner=0.5, prior.mean) {
 	ss=sample(rates, 1)
 	ww=which(rates==ss)
 	

@@ -106,13 +106,14 @@ rjmcmc.bm <- function (	phy, dat, SE=0, ngen=1000, sample.freq=100,
 ## BM IMPLEMENTATION ##
 		while(1) {
 			cur.proposal=min(which(runif(1)<prop.cs))
-			if (cur.proposal==1 & !constrainK) {									# adjust rate categories
+			if (cur.proposal==1) {													# adjust rate categories
 				nr=splitormerge(cur.delta.rates, cur.rates, ape.tre, node.des, lambdaK, logspace=TRUE, internal.only)
 				new.rates=nr$new.values
 				new.delta.rates=nr$new.delta
 				new.root=cur.root
 				lnHastingsRatio=nr$lnHastingsRatio
-				lnPriorRatio=nr$lnPriorRatio + priorratio.exp(cur.rates, cur.delta.rates, new.rates, new.delta.rates, prior.rate)	
+#				lnPriorRatio=nr$lnPriorRatio + priorratio.exp(cur.rates, cur.delta.rates, new.rates, new.delta.rates, prior.rate)
+				lnPriorRatio=nr$lnPriorRatio
 				break()
 			} else if(cur.proposal==2) {											# adjust root
 				new.root=proposal.slidingwindow(cur.root, 4*prop.width, min=NULL, max=NULL)$v								
@@ -128,7 +129,8 @@ rjmcmc.bm <- function (	phy, dat, SE=0, ngen=1000, sample.freq=100,
 					new.delta.rates=cur.delta.rates 
 					new.root=cur.root
 					lnHastingsRatio=nr$lnHastingsRatio
-					lnPriorRatio=nr$lnPriorRatio
+#					lnPriorRatio=nr$lnPriorRatio
+					lnPriorRatio=0
 					break()
 				} else {															# scale rates
 					nr=proposal.multiplier(cur.rates, prop.width)
@@ -136,7 +138,8 @@ rjmcmc.bm <- function (	phy, dat, SE=0, ngen=1000, sample.freq=100,
 					new.delta.rates=cur.delta.rates
 					new.root=cur.root
 					lnHastingsRatio=nr$lnHastingsRatio
-					lnPriorRatio=priorratio.exp(cur.rates, cur.delta.rates, new.rates, new.delta.rates, prior.rate)
+#					lnPriorRatio=priorratio.exp(cur.rates, cur.delta.rates, new.rates, new.delta.rates, prior.rate)
+					lnPriorRatio=0
 					break()
 				} 
 			}

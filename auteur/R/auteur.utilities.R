@@ -197,7 +197,13 @@ function(ntip, i, mod.cur, mod.new, lnL, lnPrior, lnHastings, curCats, newCats, 
 #author: JM EASTMAN 2010
 
 generate.starting.point <-
-function(data, phy, node.des, logspace=TRUE, K=FALSE, prop.width) { 
+function(data, phy, node.des=NULL, logspace=TRUE, K=FALSE, prop.width) { 
+
+	if(is.null(node.des)) {
+		node.des		<- sapply(unique(c(phy$edge[1,1],phy$edge[,2])), function(x) get.descendants.of.node(x, phy))
+		names(node.des) <- c(phy$edge[1,1], unique(phy$edge[,2]))
+	}
+	
 	nn=length(phy$edge.length)
 	ntip<-n<-Ntip(phy)
 	if(!K) nshifts=rtpois(1,log(ntip),nn) else nshifts=K-1

@@ -1,4 +1,4 @@
-tree.slide=function(phy, node=NULL, up=NA){
+tree.slide.LEVY=function(phy, node=NULL, up=NA){
 	root=Ntip(phy)+1
 	edges=cumsum(phy$edge.length)
 	ee=edges/max(edges)
