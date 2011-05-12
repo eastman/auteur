@@ -213,3 +213,6 @@ prunelastsplit<-function(phy) {
 	return(obj)
 }
 
+
+
+

@@ -2,6 +2,7 @@
 \alias{add.transparency}
 \alias{adjustjump}
 \alias{adjustrate}
+\alias{adjustshift}
 \alias{adjustvalue}
 \alias{assess.lnR}
 \alias{assigndescendants}
@@ -40,7 +41,6 @@
 \alias{ou.lik.fn}
 \alias{oumat}
 \alias{ouweights}
-\alias{reshape.localvalues}
 \alias{rtpois}
 \alias{splitormerge}
 \alias{splitrate}
@@ -48,7 +48,6 @@
 \alias{summarize.run}
 \alias{table.print}
 \alias{tree.slide}
-\alias{tree.slide.LEVY}
 \alias{tune.rate}
 \alias{tune.value}
 \alias{updatevcv}
