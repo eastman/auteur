@@ -2,51 +2,37 @@
 #author: JM EASTMAN 2010
 
 splitormerge <-
-function(cur.delta, cur.values, phy, node.des, lambda=lambda, logspace=TRUE, internal.only=FALSE) { 
+function(cur.delta, cur.values, phy, node.des, lambda=lambda, logspace=TRUE, internal.only=FALSE, prop.width) { 
 	bb=cur.delta
 	vv=cur.values
 	names(vv)<-names(bb)<-phy$edge[,2]
 	new.bb=choose.one(bb, phy=phy, internal.only)
 	new.vv=vv
 	
-	s=names(new.bb[bb!=new.bb])
+	s=as.numeric(names(new.bb[bb!=new.bb]))
 	all.shifts=as.numeric(names(bb[bb>0]))
-	all.D=node.des[[which(names(node.des)==s)]]
-	if(length(all.D)!=0) {
-		untouchable=unlist(lapply(all.shifts[all.shifts>s], function(x)node.des[[which(names(node.des)==x)]]))
-		remain.unchanged=union(all.shifts, untouchable)
-	} else {
-		untouchable=NULL
-		remain.unchanged=list()
-	}
-	
 	marker=match(s, names(new.vv))
 	nn=length(vv)
 	K=sum(bb)
 	N=Ntip(phy)
 	
-	ncat=sum(bb)
 	cur.vv=as.numeric(vv[marker])
 	ca.vv=length(which(vv==cur.vv))
 	
 	if(sum(new.bb)>sum(bb)) {			## add transition: SPLIT
 		decision="split"
-		n.desc=sum(!all.D%in%remain.unchanged)+1
+		n.desc=length(unexcludeddescendants(s, phy, all.shifts))+1
 		n.split=sum(vv==cur.vv)-n.desc
 		if(!logspace) {
-			u=splitvalue(cur.vv=cur.vv, n.desc=n.desc, n.split=n.split, factor=lambda) 
+			u=splitvalue(cur.vv=cur.vv, n.desc=n.desc, n.split=n.split, factor=prop.width) 
 		} else {
-			u=splitrate(cur.vv=cur.vv, n.desc=n.desc, n.split=n.split, factor=lambda)
+			u=splitrate(value=cur.vv, n.desc=n.desc, n.split=n.split)
 		}
 		nr.split=u$nr.split
 		nr.desc=u$nr.desc
 		new.vv[vv==cur.vv]=nr.split
-		if(length(remain.unchanged)==0) {	# assign new value to all descendants
-			new.vv[match(all.D,names(new.vv))] = nr.desc
-		} else {							# assign new value to all 'open' descendants 
-			new.vv[match(all.D[!(all.D%in%remain.unchanged)],names(new.vv))] = nr.desc
-		}
-		new.vv[match(s, names(new.vv))]=nr.desc
+		new.vv=assigndescendants(new.vv, s, nr.desc, phy, all.shifts)
+		
 		lnHastingsRatio = log((K+1)/(2*N-2-K)) ### from Drummond and Suchard 2010: where N is tips, K is number of local parms in tree
 		lnPriorRatio = dpois(K+1,lambda,log=TRUE)-dpois(K,lambda,log=TRUE)
 		
@@ -66,9 +52,14 @@ function(cur.delta, cur.values, phy, node.des, lambda=lambda, logspace=TRUE, int
 			nr=(sis.vv*ns.vv+cur.vv*ca.vv)/(ca.vv+ns.vv)
 			new.vv[vv==cur.vv | vv==sis.vv]=nr			
 		}
+		
 		lnHastingsRatio = log((2*N-2-K+1)/K) ### from Drummond and Suchard 2010: where N is tips, K is number of local parms in tree
 		lnPriorRatio = dpois(K-1,lambda,log=TRUE)-dpois(K,lambda,log=TRUE)
 	}
+	
+	new.values=new.vv
+	
+#	if(logspace) lnPriorRatio=lnPriorRatio+lnprior.exp(cur.values, new.values, prior.mean)
 	
 	return(list(new.delta=new.bb, new.values=new.vv, lnHastingsRatio=lnHastingsRatio, lnPriorRatio=lnPriorRatio, decision=decision))
 }
@@ -185,13 +176,8 @@ function(phy, cur.delta, cur.values){
 	# store all current shifts
 	shifts=shifts[shifts!=node]
 	
-#	print(newnode)
-
 	# determine if new shift is non-permissible
 	if(newnode%in%c(node,shifts) | all(root.des%in%c(shifts,newnode))) {
-#		print("skip")
-#		plot(phy, edge.color=ifelse(values==1, 1, ifelse(values==2, "red", "green")))
-#		nodelabels(frame="cir",cex=0.75,bg=NA)
 		return(list(new.delta=delta, new.values=values, lnHastingsRatio=0))
 	} else {		
 		
@@ -221,10 +207,6 @@ function(phy, cur.delta, cur.values){
 		} else if(direction=="root"){
 			lnh=0
 		}
-		
-#		print(direction)
-#		plot(phy, edge.color=ifelse(new.values==1, 1, ifelse(new.values==2, "red", "green")))
-#		nodelabels(frame="cir",cex=0.75,bg=NA)
 		return(list(new.delta=new.delta, new.values=new.values, lnHastingsRatio=lnh))
 	}
 }
@@ -281,7 +263,7 @@ function(jump.table, jVCV, k, r, add=FALSE, drop=FALSE, swap=FALSE, phy, node.de
 
 assigndescendants <-
 function(vv, node, value, phy, exclude=NULL){
-	try(vv[match(node, phy$edge[,2])]<-value,TRUE); if(inherits(value, "try-error")) print(list(vv,node,value,exclude))
+	vv[match(node, phy$edge[,2])]<-value
 	desc=get.desc.of.node(node, phy)
 	desc=desc[!desc%in%exclude]
 	if(length(desc)){
@@ -290,6 +272,20 @@ function(vv, node, value, phy, exclude=NULL){
 	return(vv)
 }
 
+
+#general phylogenetic utility: recurse down tree finding descendants until an 'excluded' descendant subtree is reached
+#author: JM EASTMAN 2011
+
+unexcludeddescendants <-
+function(node, phy, exclude=NULL){
+	desc=get.desc.of.node(node, phy)
+	desc=desc[!desc%in%exclude]
+	dd=desc
+	if(length(desc)){
+		for(d in desc) dd=c(unexcludeddescendants(d, phy, exclude=exclude),dd)
+	}
+	return(dd)
+}
 
 
 #general phylogenetic utility for selecting one element of a list of values, each of which can be associated with the edges of a phylogeny (phy$edge[,2])
@@ -333,16 +329,18 @@ function(cur.delta, phy, internal.only=FALSE, edge.prob=0)
 }
 
 
+
 #rjmcmc proposal mechanism: split a rate into two while maintaining the mean
-#author: JM EASTMAN 2010
+#author: JM EASTMAN 2011 [ from Huelsenbeck et al. 2004 MBE ]
 
 splitrate <-
-function(cur.vv, n.desc, n.split, factor=log(2)){
-	dev=cur.vv-exp(log(cur.vv)+runif(1, -factor, factor))
-	nr.desc=cur.vv+dev/n.desc
-	nr.split=cur.vv-dev/n.split
+function(value, n.desc, n.split){
+	u=runif(1, -n.desc*value, n.split*value)
+	nr.desc=value+u/n.desc
+	nr.split=value-u/n.split	
 	return(list(nr.desc=nr.desc, nr.split=nr.split))
 }
+
 
 
 #rjmcmc proposal mechanism: split a value into two while maintaining the mean
@@ -361,7 +359,7 @@ function(cur.vv, n.desc, n.split, factor=log(2)){
 #author: JM EASTMAN 2010
 
 tune.rate <-
-function(rates, prop.width, min=0, max=Inf, tuner=0.5, prior.mean) {
+function(rates, prop.width, min=0, max=Inf, tuner=0.5) {
 	ss=sample(rates, 1)
 	ww=which(rates==ss)
 	
@@ -372,12 +370,11 @@ function(rates, prop.width, min=0, max=Inf, tuner=0.5, prior.mean) {
 	}
 	
 	nv=nn$v
+	new.rates=rates
+	new.rates[ww]=nv
 	lhr=nn$lnHastingsRatio
-	lpr=priorratio.exp(ss, 1, nv, 1, prior.mean)
-
-	rates[ww]=nv
 	
-	return(list(values=rates, lnHastingsRatio=lhr, lnPriorRatio=lpr))
+	return(list(values=new.rates, lnHastingsRatio=lhr))
 
 }
 
@@ -444,15 +441,14 @@ proposal.multiplier <- function(value, prop.width){
 #mcmc prior calculation: compute ln-prior ratio for exponential-distributed values
 #author: JM EASTMAN 2011
 
-priorratio.exp <- function(cur.values, cur.delta, new.values, new.delta, mean){
+lnprior.exp <- function(cur.values, new.values, mean){
 	
-	proc.priorratio.exp=function(v,d,m){
-		t=v[d==1]
-		p=ifelse(length(t), sum(dexp(t, rate=1/m, log=TRUE)), 1)
+	proc.priorratio.exp=function(t,m){
+		p=sum(dexp(t, rate=1/m, log=TRUE))
 		p
 	}
 	
-	lnPriorRatio = proc.priorratio.exp(new.values, new.delta, mean) - proc.priorratio.exp(cur.values, cur.delta, mean)
+	lnPriorRatio = proc.priorratio.exp(new.values, mean) - proc.priorratio.exp(cur.values, mean)
 	return(lnPriorRatio)
 }
 

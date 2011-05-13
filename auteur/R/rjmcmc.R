@@ -5,8 +5,8 @@
 
 rjmcmc.bm <- function (	phy, dat, SE=0, ngen=1000, sample.freq=100, 
 						prob.mergesplit=0.20, prob.root=0.05, lambdaK=log(2), tuner=0.05, 
-						prior.rate=NULL, constrainK=FALSE, prop.width=NULL, simplestart=FALSE, 
-						internal.only=FALSE, summary=TRUE, fileBase="result") 
+						constrainK=FALSE, prop.width=NULL, simplestart=FALSE, 
+						summary=TRUE, fileBase="result") 
 { 
 	model="BM"
 	primary.parameter="rates"
@@ -30,10 +30,10 @@ rjmcmc.bm <- function (	phy, dat, SE=0, ngen=1000, sample.freq=100,
 	names(node.des) <- c(ape.tre$edge[1,1], unique(ape.tre$edge[,2]))
 
 # initialize parameters
-	if(is.numeric(constrainK) & (constrainK > length(ape.tre$edge) | constrainK < 1)) stop(paste("Constraint on ",primary.parameter, " is nonsensical. Ensure that constrainK is at least 1 and less than the number of available nodes in the tree.",sep=""))
+	if(is.numeric(constrainK) & (constrainK > (length(ape.tre$edge)-1) | constrainK < 1)) stop(paste("Constraint on ",primary.parameter, " is nonsensical. Ensure that constrainK is at least 1 and less than the number of edges in the tree.",sep=""))
 
-	if(simplestart | is.numeric(constrainK) | internal.only) {
-		if(is.numeric(constrainK) & !internal.only) {
+	if(simplestart | is.numeric(constrainK)) {
+		if(is.numeric(constrainK)) {
 			init.rate	<- generate.starting.point(orig.dat, ape.tre, node.des, logspace=TRUE, K=constrainK, prop.width=prop.width)
 		} else {
 			init.rate	<- list(values=rep(fit.continuous(ape.tre,orig.dat),length(ape.tre$edge.length)),delta=rep(0,length(ape.tre$edge.length)))
@@ -42,7 +42,7 @@ rjmcmc.bm <- function (	phy, dat, SE=0, ngen=1000, sample.freq=100,
 		init.rate	<- generate.starting.point(orig.dat, ape.tre, node.des, logspace=TRUE, K=constrainK, prop.width=prop.width )
 	}
 	
-	if(is.null(prior.rate)) prior.rate	<- 10
+#	if(is.null(prior.rate)) prior.rate	<- 10
 		
     cur.rates		<- init.rate$values			
 	cur.delta.rates	<- init.rate$delta
@@ -62,6 +62,11 @@ rjmcmc.bm <- function (	phy, dat, SE=0, ngen=1000, sample.freq=100,
 # proposal counts
 	n.props<-n.accept<-rep(0,length(prop.cs))
 	names.props<-c("mergesplit","rootstate","rates")
+	
+	names.subprops<-c("mergesplit","rootstate","ratetune","moveshift","ratescale")
+	n.subprops<-n.subaccept<-rep(0,length(names.subprops))
+	names(n.subprops)<-names(n.subaccept)<-names.subprops
+
 	cur.acceptancerate=0
 		
 # file handling
@@ -97,55 +102,60 @@ rjmcmc.bm <- function (	phy, dat, SE=0, ngen=1000, sample.freq=100,
 		
         lnLikelihoodRatio <- lnHastingsRatio <- lnPriorRatio <- 0
 		
-		if(internal.only) {
-				tips.tmp=which(as.numeric(names(cur.delta.rates))<=Ntip(ape.tre))
-				if(any(cur.delta.rates[tips.tmp]==1)) stop("Broken internal only sampling")
-		}
-
-		
 ## BM IMPLEMENTATION ##
 		while(1) {
 			cur.proposal=min(which(runif(1)<prop.cs))
 			if (cur.proposal==1) {													# adjust rate categories
-				nr=splitormerge(cur.delta.rates, cur.rates, ape.tre, node.des, lambdaK, logspace=TRUE, internal.only)
+				nr=splitormerge(cur.delta.rates, cur.rates, ape.tre, node.des, lambdaK, logspace=TRUE, internal.only=FALSE)
 				new.rates=nr$new.values
 				new.delta.rates=nr$new.delta
 				new.root=cur.root
 				lnHastingsRatio=nr$lnHastingsRatio
-#				lnPriorRatio=nr$lnPriorRatio + priorratio.exp(cur.rates, cur.delta.rates, new.rates, new.delta.rates, prior.rate)
 				lnPriorRatio=nr$lnPriorRatio
+				subprop="mergesplit"
 				break()
 			} else if(cur.proposal==2) {											# adjust root
-				new.root=proposal.slidingwindow(cur.root, 4*prop.width, min=NULL, max=NULL)$v								
+				new.root=proposal.slidingwindow(cur.root, 2*prop.width, min=NULL, max=NULL)$v								
 				new.rates=cur.rates
 				new.delta.rates=cur.delta.rates
-				lnHastingsRatio=0
-				lnPriorRatio=0
+				subprop="rootstate"
 				break()
 			} else if(cur.proposal==3){													
 				if(runif(1)>0.05 & sum(cur.delta.rates)>1) {						# tune local rate
-					nr=tune.rate(rates=cur.rates, prop.width=prop.width, min=0, max=Inf, tuner=tuner, prior.mean=prior.rate)
-					new.rates=nr$values
-					new.delta.rates=cur.delta.rates 
-					new.root=cur.root
-					lnHastingsRatio=nr$lnHastingsRatio
-#					lnPriorRatio=nr$lnPriorRatio
-					lnPriorRatio=0
-					break()
+					if(runif(1)>0.5) {
+						nr=tune.rate(rates=cur.rates, prop.width=prop.width, min=0, max=Inf, tuner=tuner)
+						new.rates=nr$values
+						new.delta.rates=cur.delta.rates 
+						new.root=cur.root
+						lnHastingsRatio=nr$lnHastingsRatio
+#						lnPriorRatio=lnprior.exp(cur.rates, new.rates, prior.rate)
+						subprop="ratetune"
+						break()						
+					} else {
+						nr=adjustshift(phy=ape.tre, cur.delta=cur.delta.rates, cur.values=cur.rates)
+						new.rates=nr$new.values
+						new.delta.rates=nr$new.delta 
+						new.root=cur.root
+						lnHastingsRatio=nr$lnHastingsRatio
+						subprop="moveshift"
+						break()						
+					}
 				} else {															# scale rates
 					nr=proposal.multiplier(cur.rates, prop.width)
 					new.rates=nr$v
 					new.delta.rates=cur.delta.rates
 					new.root=cur.root
 					lnHastingsRatio=nr$lnHastingsRatio
-#					lnPriorRatio=priorratio.exp(cur.rates, cur.delta.rates, new.rates, new.delta.rates, prior.rate)
-					lnPriorRatio=0
+#					lnPriorRatio=lnprior.exp(cur.rates, new.rates, prior.rate)
+					subprop="ratescale"
 					break()
 				} 
 			}
 		}
 		
-		n.props[cur.proposal]=n.props[cur.proposal]+1				
+		n.props[cur.proposal]=n.props[cur.proposal]+1
+		n.subprops[subprop]=n.subprops[subprop]+1				
+
 
 	# compute fit of proposed model
 		if(any(new.rates!=cur.rates)) new.vcv=updatevcv(ape.tre, new.rates) else new.vcv=cur.vcv
@@ -175,7 +185,7 @@ rjmcmc.bm <- function (	phy, dat, SE=0, ngen=1000, sample.freq=100,
 			cur.vcv <- new.vcv
 
 			n.accept[cur.proposal] = n.accept[cur.proposal]+1
-
+			n.subaccept[subprop] = n.subaccept[subprop]+1
 			mod.cur <- mod.new
 			cur.lnL <- mod.new$lnL
 		} 
@@ -207,7 +217,7 @@ rjmcmc.bm <- function (	phy, dat, SE=0, ngen=1000, sample.freq=100,
 	if(summary) {
 		close(runLog)
 		parlogger(primary.parameter=primary.parameter, parmBase=parmBase, end=TRUE)
-		summarize.run(n.accept, n.props, names.props)	
+		summarize.run(n.subaccept, n.subprops, names.subprops)	
 		cleanup.files(parmBase, model, fileBase, ape.tre)
 	} 
 	

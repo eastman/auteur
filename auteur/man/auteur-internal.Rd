@@ -31,11 +31,14 @@
 \alias{is.root}
 \alias{jumps.edgewise}
 \alias{levyevolver}
+\alias{lnprior.exp}
 \alias{nearest.pair}
 \alias{parlogger}
 \alias{pathlengths}
 \alias{prepare.data}
 \alias{priorratio.exp}
+\alias{proposal.multiplier}
+\alias{proposal.slidingwindow}
 \alias{prunelastsplit}
 \alias{ptpois}
 \alias{ou.lik.fn}
@@ -54,6 +57,7 @@
 \alias{updateJvcv}
 \alias{updateLvcv}
 \alias{ultrametricize}
+\alias{unexcludeddescendants}
 \alias{withinrange}
 
 \title{internal auteur functions}

@@ -2,7 +2,7 @@
 \alias{rjmcmc.bm}
 \title{Bayesian sampling of shifts in trait-evolutionary rates: Brownian motion}
 \description{Implements reversible-jump Markov chain Monte Carlo sampling to identify shifts in the process of continuous trait evolution across phylogenetic trees}
-\usage{rjmcmc.bm(phy, dat, SE=0, ngen = 1000, sample.freq = 100, prob.mergesplit = 0.20, prob.root = 0.05, lambdaK = log(2), tuner = 0.05, prior.rate = NULL, constrainK = FALSE, prop.width = NULL, simplestart = FALSE, internal.only = FALSE, summary = TRUE, fileBase = "result")}
+\usage{rjmcmc.bm(phy, dat, SE=0, ngen = 1000, sample.freq = 100, prob.mergesplit = 0.20, prob.root = 0.05, lambdaK = log(2), tuner = 0.05, constrainK = FALSE, prop.width = NULL, simplestart = FALSE, summary = TRUE, fileBase = "result")}
 \arguments{
   \item{phy}{a phylogenetic tree of class 'phylo'}
   \item{dat}{a named vector of continuous trait values, associated with each species in \code{phy}; see \code{\link[geiger]{name.check}}}
@@ -13,11 +13,9 @@
   \item{prob.root}{proportion of proposals in which the root state is updated}
   \item{lambdaK}{the shape parameter for the Poisson prior-distribution on number of distinct rates}
   \item{tuner}{value between 0 and 1, determining the proportion of sliding-window rate-proposals (rather than multiplier proposals)} 
-  \item{prior.rate}{the mean of the exponential used as a prior distribution on rates; if null, a mean of 10 is used}
   \item{constrainK}{a constraint of model complexity (e.g., \code{constrainK=2} restricts sampling to models with two independent rates)}
   \item{prop.width}{if \code{NULL}, the proposal width is calibrated; otherwise, proposal width is constrained to the supplied value}
   \item{simplestart}{if \code{FALSE}, a random model complexity is chosen; if \code{TRUE}, Markov sampling begins under a global-rate model}
-  \item{internal.only}{dictates whether any branch in the tree can be chosen for a rate shift or tips only (\code{internal.only=FALSE})} 
   \item{summary}{a logical switch that determines whether any output is printed to the console after the analysis has finished}
   \item{fileBase}{a string used to uniquely identify the base directory to which Markov samples are written}
 }

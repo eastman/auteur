@@ -477,22 +477,6 @@ function(phy, cur.rates, color.length=8, digits=3, plot=TRUE, legend=TRUE, legen
 
 
 
-#rjmcmc run diagnosis, generating tallies of proposed and accepted updates by class of proposal mechanism
-#author: JM EASTMAN 2010
-
-summarize.run <-
-function(n.accept, n.props, prop.names) {
-	df=data.frame(cbind(proposed=n.props, accepted=n.accept, adoptrate=n.accept/n.props))
-	rownames(df)=prop.names
-	cat("\n\n",rep(" ",10),toupper(" sampling summary"),"\n")
-	
-	if(any(is.na(df))) df[is.na(df)]=0
-	table.print(df, digits=c(0,0,4), buffer=6)
-	
-	cat("\n\n")
-	
-}
-
 #general phylogenetic plotting utility, which is a modification of ape:::edgelabels, plotting edge symbols at the temporal beginning of the branch
 #author: E PARADIS 2009 and JM EASTMAN 2010
 #note: may not be trustworthy where lastPP$type is not "phylogram"

@@ -1,3 +1,21 @@
+#rjmcmc run diagnosis, generating tallies of proposed and accepted updates by class of proposal mechanism
+#author: JM EASTMAN 2010
+
+summarize.run <-
+function(n.accept, n.props, prop.names) {
+	df=data.frame(cbind(proposed=n.props, accepted=n.accept, adoptrate=n.accept/n.props))
+	rownames(df)=prop.names
+	cat("\n\n",rep(" ",10),toupper(" sampling summary"),"\n")
+	
+	if(any(is.na(df))) df[is.na(df)]=0
+	table.print(df, digits=c(0,0,4), buffer=6)
+	
+	cat("\n\n")
+	
+}
+
+
+
 #logging utility used by rjmcmc
 #author: JM EASTMAN 2010
 
@@ -70,24 +88,24 @@ parlogger <- function(phy, init=FALSE, primary.parameter, parameters, parmBase, 
 #modified: 02.26.2011 to use spline() in computation of best prop.width
 
 calibrate.proposalwidth <-
-function(phy, dat, nsteps=100, model, widths=NULL) {
+function(phy, dat, nsteps=100, model=c("BM","jumpBM","OU"), widths=NULL) {
 	if(!withinrange(nsteps, 100, 1000)) {
 		if(nsteps>1000) nsteps=1000 else nsteps=100
 	}
 	if(is.null(widths)) widths=2^(-2:4)
 	if(model=="BM") {
-		acceptance.rates=sapply(widths, function(x) rjmcmc.bm(phy=phy, dat=dat, ngen=nsteps, prop.width=x, summary=FALSE, fileBase="propwidth", internal.only=FALSE)$acceptance.rate)
+		acceptance.rates=sapply(widths, function(x) rjmcmc.bm(phy=phy, dat=dat, ngen=nsteps, prop.width=x, summary=FALSE, fileBase="propwidth")$acceptance.rate)
 	} else if(model=="jumpBM") {
-		acceptance.rates=sapply(widths, function(x) mcmc.levy(phy=phy, dat=dat, ngen=nsteps, prop.width=x, summary=FALSE, fileBase="propwidth")$acceptance.rate)
+#		acceptance.rates=sapply(widths, function(x) mcmc.levy(phy=phy, dat=dat, ngen=nsteps, prop.width=x, summary=FALSE, fileBase="propwidth")$acceptance.rate)
 	} else if(model=="OU") {
-		while(1){
-			acceptance.rates=sapply(widths, function(x) {
-								f=try(x<-rjmcmc.ou(phy=phy, dat=dat, ngen=nsteps, prop.width=x, summary=FALSE, fileBase="propwidth", internal.only=FALSE)$acceptance.rate,silent=TRUE)
-								if(inherits(f,"try-error")) return(0) else return(x)
-								}
-								)
-			if(any(acceptance.rates!=0))break()
-		}
+#		while(1){
+#			acceptance.rates=sapply(widths, function(x) {
+#								f=try(x<-rjmcmc.ou(phy=phy, dat=dat, ngen=nsteps, prop.width=x, summary=FALSE, fileBase="propwidth")$acceptance.rate,silent=TRUE)
+#								if(inherits(f,"try-error")) return(0) else return(x)
+#								}
+#								)
+#			if(any(acceptance.rates!=0))break()
+#		}
 	}
 	s=spline(log(widths,base=2),acceptance.rates)
 	m.s=mean(s$y)

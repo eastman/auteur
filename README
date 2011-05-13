@@ -1,1 +1,5 @@
-Please use provided 'downloads' as these are trusted versions of the R package -- all bets are off otherwise!  
+This repository is intended for source **development**
+
+By mid-summer 2011, the auteur package should be available from http://cran.r-project.org/
+
+Until the package can be uploaded to the CRAN repository, please use provided 'downloads' as these are trusted versions of the R package -- all bets are off otherwise!  
