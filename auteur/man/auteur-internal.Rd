@@ -8,6 +8,7 @@
 \alias{assigndescendants}
 \alias{bm.lik.fn}
 \alias{branchcol.plot} 
+\alias{checkrates}
 \alias{choose.one}
 \alias{cleanup.files}
 \alias{collect.nodes}

@@ -88,13 +88,13 @@ parlogger <- function(phy, init=FALSE, primary.parameter, parameters, parmBase, 
 #modified: 02.26.2011 to use spline() in computation of best prop.width
 
 calibrate.proposalwidth <-
-function(phy, dat, nsteps=100, model=c("BM","jumpBM","OU"), widths=NULL) {
+function(phy, dat, nsteps=100, model=c("BM","jumpBM","OU"), widths=NULL, lim=list(min=0, max=Inf)) {
 	if(!withinrange(nsteps, 100, 1000)) {
 		if(nsteps>1000) nsteps=1000 else nsteps=100
 	}
 	if(is.null(widths)) widths=2^(-2:4)
 	if(model=="BM") {
-		acceptance.rates=sapply(widths, function(x) rjmcmc.bm(phy=phy, dat=dat, ngen=nsteps, prop.width=x, summary=FALSE, fileBase="propwidth")$acceptance.rate)
+		acceptance.rates=sapply(widths, function(x) rjmcmc.bm(phy=phy, dat=dat, ngen=nsteps, prop.width=x, summary=FALSE, lim=lim, fileBase="propwidth")$acceptance.rate)
 	} else if(model=="jumpBM") {
 #		acceptance.rates=sapply(widths, function(x) mcmc.levy(phy=phy, dat=dat, ngen=nsteps, prop.width=x, summary=FALSE, fileBase="propwidth")$acceptance.rate)
 	} else if(model=="OU") {

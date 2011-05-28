@@ -6,7 +6,7 @@
 rjmcmc.bm <- function (	phy, dat, SE=0, ngen=1000, sample.freq=100, 
 						prob.mergesplit=0.20, prob.root=0.05, lambdaK=log(2), tuner=0.05, 
 						constrainK=FALSE, prop.width=NULL, simplestart=FALSE, 
-						summary=TRUE, fileBase="result") 
+						lim=list(min=0, max=Inf), summary=TRUE, fileBase="result") 
 { 
 	model="BM"
 	primary.parameter="rates"
@@ -15,7 +15,7 @@ rjmcmc.bm <- function (	phy, dat, SE=0, ngen=1000, sample.freq=100,
 	if(is.null(prop.width)) {
 		cat("CALIBRATING proposal width...\n")
 		adjustable.prop.width=TRUE
-		prop.width=calibrate.proposalwidth(phy, dat, nsteps=ngen/1000, model)
+		prop.width=calibrate.proposalwidth(phy, dat, nsteps=ngen/1000, model, lim=lim)
 	} else {
 		if(prop.width<=0) stop("please supply a 'prop.width' larger than 0")
 		adjustable.prop.width=FALSE
@@ -32,18 +32,22 @@ rjmcmc.bm <- function (	phy, dat, SE=0, ngen=1000, sample.freq=100,
 # initialize parameters
 	if(is.numeric(constrainK) & (constrainK > (length(ape.tre$edge)-1) | constrainK < 1)) stop(paste("Constraint on ",primary.parameter, " is nonsensical. Ensure that constrainK is at least 1 and less than the number of edges in the tree.",sep=""))
 
-	if(simplestart | is.numeric(constrainK)) {
-		if(is.numeric(constrainK)) {
-			init.rate	<- generate.starting.point(orig.dat, ape.tre, node.des, logspace=TRUE, K=constrainK, prop.width=prop.width)
+	while(1) {
+		if(simplestart | is.numeric(constrainK)) {
+			if(is.numeric(constrainK)) {
+				init.rate	<- generate.starting.point(orig.dat, ape.tre, node.des, logspace=TRUE, K=constrainK, prop.width=prop.width)
+			} else {
+				init.rate	<- list(values=rep(fit.continuous(ape.tre,orig.dat),length(ape.tre$edge.length)),delta=rep(0,length(ape.tre$edge.length)))
+			}
 		} else {
-			init.rate	<- list(values=rep(fit.continuous(ape.tre,orig.dat),length(ape.tre$edge.length)),delta=rep(0,length(ape.tre$edge.length)))
+			init.rate	<- generate.starting.point(orig.dat, ape.tre, node.des, logspace=TRUE, K=constrainK, prop.width=prop.width )
 		}
-	} else {
-		init.rate	<- generate.starting.point(orig.dat, ape.tre, node.des, logspace=TRUE, K=constrainK, prop.width=prop.width )
+		
+		tmp.rates		<- init.rate$values			
+		if(checkrates(tmp.rates, lim)) break()
 	}
 	
-#	if(is.null(prior.rate)) prior.rate	<- 10
-		
+			
     cur.rates		<- init.rate$values			
 	cur.delta.rates	<- init.rate$delta
 	cur.root		<- adjustvalue(mean(orig.dat), prop.width)
@@ -106,7 +110,7 @@ rjmcmc.bm <- function (	phy, dat, SE=0, ngen=1000, sample.freq=100,
 		while(1) {
 			cur.proposal=min(which(runif(1)<prop.cs))
 			if (cur.proposal==1) {													# adjust rate categories
-				nr=splitormerge(cur.delta.rates, cur.rates, ape.tre, node.des, lambdaK, logspace=TRUE, internal.only=FALSE)
+				nr=splitormerge(cur.delta.rates, cur.rates, ape.tre, node.des, lambdaK, logspace=TRUE, internal.only=FALSE, prop.width=prop.width, lim=lim)
 				new.rates=nr$new.values
 				new.delta.rates=nr$new.delta
 				new.root=cur.root
@@ -115,7 +119,7 @@ rjmcmc.bm <- function (	phy, dat, SE=0, ngen=1000, sample.freq=100,
 				subprop="mergesplit"
 				break()
 			} else if(cur.proposal==2) {											# adjust root
-				new.root=proposal.slidingwindow(cur.root, 2*prop.width, min=NULL, max=NULL)$v								
+				new.root=proposal.slidingwindow(cur.root, 2*prop.width, lim=list(min=-Inf, max=Inf))$v								
 				new.rates=cur.rates
 				new.delta.rates=cur.delta.rates
 				subprop="rootstate"
@@ -123,12 +127,11 @@ rjmcmc.bm <- function (	phy, dat, SE=0, ngen=1000, sample.freq=100,
 			} else if(cur.proposal==3){													
 				if(runif(1)>0.05 & sum(cur.delta.rates)>1) {						# tune local rate
 					if(runif(1)>0.5) {
-						nr=tune.rate(rates=cur.rates, prop.width=prop.width, min=0, max=Inf, tuner=tuner)
+						nr=tune.rate(rates=cur.rates, prop.width=prop.width, tuner=tuner, lim=lim)
 						new.rates=nr$values
 						new.delta.rates=cur.delta.rates 
 						new.root=cur.root
 						lnHastingsRatio=nr$lnHastingsRatio
-#						lnPriorRatio=lnprior.exp(cur.rates, new.rates, prior.rate)
 						subprop="ratetune"
 						break()						
 					} else {
@@ -141,12 +144,11 @@ rjmcmc.bm <- function (	phy, dat, SE=0, ngen=1000, sample.freq=100,
 						break()						
 					}
 				} else {															# scale rates
-					nr=proposal.multiplier(cur.rates, prop.width)
+					nr=proposal.multiplier(cur.rates, prop.width, lim=lim)
 					new.rates=nr$v
 					new.delta.rates=cur.delta.rates
 					new.root=cur.root
 					lnHastingsRatio=nr$lnHastingsRatio
-#					lnPriorRatio=lnprior.exp(cur.rates, new.rates, prior.rate)
 					subprop="ratescale"
 					break()
 				} 

@@ -2,7 +2,7 @@
 #author: JM EASTMAN 2010
 
 splitormerge <-
-function(cur.delta, cur.values, phy, node.des, lambda=lambda, logspace=TRUE, internal.only=FALSE, prop.width) { 
+function(cur.delta, cur.values, phy, node.des, lambda=lambda, logspace=TRUE, internal.only=FALSE, prop.width, lim=list(min=0, max=Inf)) { 
 	bb=cur.delta
 	vv=cur.values
 	names(vv)<-names(bb)<-phy$edge[,2]
@@ -26,7 +26,7 @@ function(cur.delta, cur.values, phy, node.des, lambda=lambda, logspace=TRUE, int
 		if(!logspace) {
 			u=splitvalue(cur.vv=cur.vv, n.desc=n.desc, n.split=n.split, factor=prop.width) 
 		} else {
-			u=splitrate(value=cur.vv, n.desc=n.desc, n.split=n.split)
+			u=splitrate(value=cur.vv, n.desc=n.desc, n.split=n.split, lim)
 		}
 		nr.split=u$nr.split
 		nr.desc=u$nr.desc
@@ -334,10 +334,15 @@ function(cur.delta, phy, internal.only=FALSE, edge.prob=0)
 #author: JM EASTMAN 2011 [ from Huelsenbeck et al. 2004 MBE ]
 
 splitrate <-
-function(value, n.desc, n.split){
-	u=runif(1, -n.desc*value, n.split*value)
-	nr.desc=value+u/n.desc
-	nr.split=value-u/n.split	
+function(value, n.desc, n.split, lim=list(min=0, max=Inf)){
+	if(!checkrates(value, lim)) stop("Rate appears out of bounds.")
+	while(1) {
+		u=runif(1, -n.desc*value, n.split*value)
+		nr.desc=value+u/n.desc
+		nr.split=value-u/n.split	
+		
+		if(checkrates(c(nr.desc, nr.split), lim)) break()
+	}
 	return(list(nr.desc=nr.desc, nr.split=nr.split))
 }
 
@@ -359,14 +364,14 @@ function(cur.vv, n.desc, n.split, factor=log(2)){
 #author: JM EASTMAN 2010
 
 tune.rate <-
-function(rates, prop.width, min=0, max=Inf, tuner=0.5) {
+function(rates, prop.width, tuner=0.5, lim=list(min=0, max=Inf)) {
 	ss=sample(rates, 1)
 	ww=which(rates==ss)
 	
 	if(runif(1)<tuner){
-		nn=proposal.slidingwindow(ss, prop.width, min=min, max=max)
+		nn=proposal.slidingwindow(ss, prop.width, lim)
 	} else {
-		nn=proposal.multiplier(ss, prop.width)
+		nn=proposal.multiplier(ss, prop.width, lim)
 	}
 	
 	nv=nn$v
@@ -379,18 +384,24 @@ function(rates, prop.width, min=0, max=Inf, tuner=0.5) {
 }
 
 
+
+checkrates=function(rates, lim=list(min=0,max=Inf)){
+	if(all(rates>lim$min) & all(rates<lim$max)) return(TRUE) else return(FALSE)
+}
+
+
 #rjmcmc proposal mechanism for updating a single numeric class from a vector
 #author: JM EASTMAN 2010
 
 tune.value <-
-function(values, prop.width, min=-Inf, max=Inf, tuner=0.5) {
+function(values, prop.width, tuner=0.5, lim=list(min=-Inf, max=Inf)) {
 	ss=sample(values, 1)
 	ww=which(values==ss)	
 	
 	if(runif(1)<tuner){
-		nn=proposal.slidingwindow(ss, prop.width, min=min, max=max)
+		nn=proposal.slidingwindow(ss, prop.width, lim)
 	} else {
-		nn=proposal.multiplier(ss, prop.width)
+		nn=proposal.multiplier(ss, prop.width, lim)
 	}
 	
 	nv=nn$v
@@ -406,19 +417,25 @@ function(values, prop.width, min=-Inf, max=Inf, tuner=0.5) {
 #rjmcmc proposal mechanism: adjust a value (within bounds)
 #author: JM EASTMAN 2011
 
-proposal.slidingwindow <- function(value, prop.width, min=NULL, max=NULL){
-	u=runif(1)
-	v=value+(u-0.5)*prop.width
-	if((!is.null(min) | !is.null(max))){
+proposal.slidingwindow <- function(value, prop.width, lim=list(min=-Inf, max=Inf)){
+	if(!checkrates(value, lim)) stop("Values appear out of bounds.")
+	min=lim$min
+	max=lim$max
+	
+	while(1){
+		u=runif(1)
+		v=value+(u-0.5)*prop.width
 		
 		# reflect if out-of-bounds
 		if(any(v>max)) {
 			v[v>max]=max-(v[v>max]-max)
-		} else if(any(v<min)){
+		}
+		if(any(v<min)){
 			v[v<min]=min-(v[v<min]-min)
 		}
+		if(checkrates(v, lim)) break()
+	}
 		
-	}	
 	return(list(v=v, lnHastingsRatio=0))
 }
 
@@ -426,14 +443,20 @@ proposal.slidingwindow <- function(value, prop.width, min=NULL, max=NULL){
 #rjmcmc proposal mechanism: scale a value with asymmetrically drawn multiplier
 #author: JM EASTMAN 2011
 
-proposal.multiplier <- function(value, prop.width){
+proposal.multiplier <- function(value, prop.width, lim=list(min=-Inf, max=Inf)){
+	if(!checkrates(value, lim)) stop("Values appear out of bounds.")
+
 	tmp=c(prop.width, 1/prop.width)
 	a=min(tmp)
 	b=max(tmp)
 	lambda=2*log(b)
-	u=runif(1)
-	m=exp(lambda*(u-0.5))
-	return(list(v=value*m, lnHastingsRatio=log(u)))
+	while(1){
+		u=runif(1)
+		m=exp(lambda*(u-0.5))
+		v=value*m
+		if(checkrates(v, lim)) break()
+	}
+	return(list(v=v, lnHastingsRatio=log(u)))
 }
 
 

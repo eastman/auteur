@@ -2,7 +2,7 @@
 \alias{rjmcmc.bm}
 \title{Bayesian sampling of shifts in trait-evolutionary rates: Brownian motion}
 \description{Implements reversible-jump Markov chain Monte Carlo sampling to identify shifts in the process of continuous trait evolution across phylogenetic trees}
-\usage{rjmcmc.bm(phy, dat, SE=0, ngen = 1000, sample.freq = 100, prob.mergesplit = 0.20, prob.root = 0.05, lambdaK = log(2), tuner = 0.05, constrainK = FALSE, prop.width = NULL, simplestart = FALSE, summary = TRUE, fileBase = "result")}
+\usage{rjmcmc.bm(phy, dat, SE=0, ngen = 1000, sample.freq = 100, prob.mergesplit = 0.20, prob.root = 0.05, lambdaK = log(2), tuner = 0.05, constrainK = FALSE, prop.width = NULL, simplestart = FALSE, lim = list(min = 0, max = Inf), summary = TRUE, fileBase = "result")}
 \arguments{
   \item{phy}{a phylogenetic tree of class 'phylo'}
   \item{dat}{a named vector of continuous trait values, associated with each species in \code{phy}; see \code{\link[geiger]{name.check}}}
@@ -16,6 +16,7 @@
   \item{constrainK}{a constraint of model complexity (e.g., \code{constrainK=2} restricts sampling to models with two independent rates)}
   \item{prop.width}{if \code{NULL}, the proposal width is calibrated; otherwise, proposal width is constrained to the supplied value}
   \item{simplestart}{if \code{FALSE}, a random model complexity is chosen; if \code{TRUE}, Markov sampling begins under a global-rate model}
+  \item{lim}{a numeric list defining lower (\code{min}) and upper (\code{max}) bounds on relative rates}
   \item{summary}{a logical switch that determines whether any output is printed to the console after the analysis has finished}
   \item{fileBase}{a string used to uniquely identify the base directory to which Markov samples are written}
 }

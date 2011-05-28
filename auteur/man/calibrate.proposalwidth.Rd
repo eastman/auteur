@@ -8,7 +8,7 @@ initialize proposal width
 Generates a reasonable proposal width to initiate sampling for Markov sampling
 }
 \usage{
-calibrate.proposalwidth(phy, dat, nsteps = 100, model, widths = NULL)
+calibrate.proposalwidth(phy, dat, nsteps = 100, model, widths = NULL, lim = list(min = 0, max = Inf))
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -23,6 +23,8 @@ currently either \code{model="BM"} or \code{model="OU"} for Brownian motion or a
 see \code{\link[auteur]{rjmcmc.bm}} for further information on fitting these models}
   \item{widths}{
 if unspecified, a series of proposal widths from 1/8 to 8 will be considered}
+  \item{lim}{a numeric list defining lower (\code{min}) and upper (\code{max}) bounds on relative rates}
+
 }
 \details{
 This is primarily an internal function, although may be useful for constraining subsequent runs after an adequate proposal width has been approximated by this function. This 
