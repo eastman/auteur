@@ -243,6 +243,6 @@ rjmcmc.bm <- function (	phy, dat, SE=0, ngen=1000, sample.freq=100, reml=TRUE,
 		cleanup.files(parmBase, model, fileBase, ape.tre)
 	} 
 	
-	return(list(acceptance.rate=sum(n.accept)/sum(n.props), prop.width=prop.width))
+	return(list(phy=ape.tre, dat=orig.dat, acceptance.rate=sum(n.accept)/sum(n.props), prop.width=prop.width))
 }
 

@@ -140,6 +140,8 @@ function(parmBase, model, fileBase, phy){
 	
 	save(posteriorsamples, file=paste(parmBase,paste(fileBase,"posteriorsamples","rda",sep="."),sep="/"))
 	unlink(paste(parmBase,paste(parms,"txt",sep="."),sep="/"))
+	
+	write.tree(phy, file=paste(parmBase,paste(fileBase,"tre",sep="."),sep="/"))
 }
 
 
@@ -363,6 +365,8 @@ function(phy, data, SE, reml=FALSE) {
 		SE=rep(0,length(td$phy$tip.label))
 		names(SE)=td$phy$tip.label
 	}
+	
+	if(ncol(td$data)>1) stop("please supply one trait at a time")
 	
 	return(list(ape.tre=td$phy, pruningwise.tre=reorder(td$phy, "pruningwise"), orig.dat=td$data[,1], SE=SE))
 }
