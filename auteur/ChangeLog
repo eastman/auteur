@@ -1,5 +1,9 @@
 CHANGES IN AUTEUR VERSION 0.11
-2011-05-11
+2011-06-12
+  * adding REML computation for faster runs with large datasets
+
+2011-05-12
+  * trusted version
   * moved repository to gitHUB 
   * forked auteurExtended (OU, BM, Levy) and auteur (BM only)
 

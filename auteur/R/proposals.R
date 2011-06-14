@@ -476,16 +476,22 @@ lnprior.exp <- function(cur.values, new.values, mean){
 }
 
 
+#scales phylogeny by relative evolutionary rates under Brownian motion
+#author: JM EASTMAN 2011
 
+updatetree <-
+function(ape.tre, new.rates){
+	ape.tre$edge.length=ape.tre$edge.length*new.rates
+	return(ape.tre)
+}
 
+		   
 #scales VCV matrix of phylogeny by relative evolutionary rates under Brownian motion
 #author: JM EASTMAN 2010
 
 updatevcv <-
 function(ape.tre, new.rates) {
-	n=ape.tre
-	n$edge.length=n$edge.length*new.rates
-	vv=vmat(n)
+	vv=vmat(updatetree(ape.tre, new.rates))
 	return(vv)
 }
 

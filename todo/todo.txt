@@ -1,0 +1,3 @@
+drop pdf option in shifts.plot
+add reml method for lnL calculation of states given tree under BM
+bayesian summary of rate densities

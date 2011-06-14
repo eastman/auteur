@@ -3,30 +3,34 @@
 #function for Markov sampling from a range of model complexities under the general process of Brownian motion evolution of continuous traits
 #author: LJ HARMON 2009, A HIPP 2009, and JM EASTMAN 2010-2011
 
-rjmcmc.bm <- function (	phy, dat, SE=0, ngen=1000, sample.freq=100, 
+rjmcmc.bm <- function (	phy, dat, SE=0, ngen=1000, sample.freq=100, reml=TRUE,
 						prob.mergesplit=0.20, prob.root=0.05, lambdaK=log(2), tuner=0.05, 
 						constrainK=FALSE, prop.width=NULL, simplestart=FALSE, 
 						lim=list(min=0, max=Inf), summary=TRUE, fileBase="result") 
 { 
 	model="BM"
 	primary.parameter="rates"
+	
+	if(sample.freq>ngen) stop("increase 'ngen' or decrease 'sample.freq'")
 
 # calibration of proposal width	
 	if(is.null(prop.width)) {
 		cat("CALIBRATING proposal width...\n")
 		adjustable.prop.width=TRUE
-		prop.width=calibrate.proposalwidth(phy, dat, nsteps=ngen/1000, model, lim=lim)
+		prop.width=calibrate.proposalwidth(phy, dat, nsteps=ngen/1000, model, lim=lim, reml=reml)
 	} else {
 		if(prop.width<=0) stop("please supply a 'prop.width' larger than 0")
 		adjustable.prop.width=FALSE
 	}
 		
 ### prepare data for rjMCMC
-	dataList		<- prepare.data(phy, dat, SE)			
-	ape.tre			<- dataList$ape.tre			
+	dataList		<- prepare.data.bm(phy, dat, SE, reml)			
+	ape.tre			<- dataList$ape.tre		
+	pruningwise.tre <- dataList$pruningwise.tre
+	edgeorder		<- match(pruningwise.tre$edge[,2], ape.tre$edge[,2])
 	orig.dat		<- dataList$orig.dat
 	SE				<- dataList$SE
-	node.des		<- sapply(unique(c(ape.tre$edge[1,1],ape.tre$edge[,2])), function(x) get.descendants.of.node(x, ape.tre))
+	node.des		<- sapply(unique(c(min(ape.tre$edge[,1]),ape.tre$edge[,2])), function(x) get.descendants.of.node(x, ape.tre))
 	names(node.des) <- c(ape.tre$edge[1,1], unique(ape.tre$edge[,2]))
 
 # initialize parameters
@@ -47,13 +51,22 @@ rjmcmc.bm <- function (	phy, dat, SE=0, ngen=1000, sample.freq=100,
 		if(checkrates(tmp.rates, lim)) break()
 	}
 	
-			
     cur.rates		<- init.rate$values			
 	cur.delta.rates	<- init.rate$delta
-	cur.root		<- adjustvalue(mean(orig.dat), prop.width)
-	cur.vcv			<- updatevcv(ape.tre, cur.rates)
 	
-	mod.cur = bm.lik.fn(cur.root, orig.dat, cur.vcv, SE)
+	# REML parameters
+	ic			<- pic(orig.dat, pruningwise.tre, scaled=FALSE, var=FALSE)
+	
+	if(reml){
+		cur.root	<- NA
+		cur.vcv		<- NA
+		mod.cur		<- bm.reml.fn(pruningwise.tre, cur.rates[edgeorder], ic)
+	} else {
+		cur.root	<- adjustvalue(mean(orig.dat), prop.width)
+		cur.vcv		<- updatevcv(ape.tre, cur.rates)
+		mod.cur		<- bm.lik.fn(cur.root, orig.dat, cur.vcv, SE)
+	}
+	
 	cur.lnL=mod.cur$lnL
 
 			
@@ -118,7 +131,7 @@ rjmcmc.bm <- function (	phy, dat, SE=0, ngen=1000, sample.freq=100,
 				lnPriorRatio=nr$lnPriorRatio
 				subprop="mergesplit"
 				break()
-			} else if(cur.proposal==2) {											# adjust root
+			} else if(cur.proposal==2 & !reml) {									# adjust root
 				new.root=proposal.slidingwindow(cur.root, 2*prop.width, lim=list(min=-Inf, max=Inf))$v								
 				new.rates=cur.rates
 				new.delta.rates=cur.delta.rates
@@ -160,11 +173,19 @@ rjmcmc.bm <- function (	phy, dat, SE=0, ngen=1000, sample.freq=100,
 
 
 	# compute fit of proposed model
-		if(any(new.rates!=cur.rates)) new.vcv=updatevcv(ape.tre, new.rates) else new.vcv=cur.vcv
-		mod.new=NULL
-		mod.new=try(bm.lik.fn(new.root, orig.dat, new.vcv, SE), silent=TRUE)
+		if(reml) {
+			mod.new=bm.reml.fn(pruningwise.tre, new.rates[edgeorder], ic)
+			new.vcv=cur.vcv
+		} else {
+			if(any(new.rates!=cur.rates)) new.vcv=updatevcv(ape.tre, new.rates) else new.vcv=cur.vcv
+			mod.new=try(bm.lik.fn(new.root, orig.dat, new.vcv, SE), silent=TRUE)
+		}
 		
+	# check lnL computation
+		if(is.infinite(mod.cur$lnL)) stop("starting point has exceptionally poor likelihood")
+
 		if(inherits(mod.new, "try-error")) {mod.new=as.list(mod.new); mod.new$lnL=-Inf}
+		
 		if(!is.infinite(mod.new$lnL)) {
 			lnLikelihoodRatio = mod.new$lnL - mod.cur$lnL
 		} else {
@@ -177,7 +198,6 @@ rjmcmc.bm <- function (	phy, dat, SE=0, ngen=1000, sample.freq=100,
 		r=assess.lnR((heat * lnLikelihoodRatio + heat * lnPriorRatio + lnHastingsRatio)->lnR)
 
 		# potential errors
-		if(is.infinite(mod.cur$lnL)) stop("starting point has exceptionally poor likelihood")
 		if(r$error & summary) generate.error.message(Ntip(ape.tre), i, mod.cur, mod.new, lnLikelihoodRatio, lnPriorRatio, lnHastingsRatio, cur.delta.rates, new.delta.rates, errorLog)
 		
 		if (runif(1) <= r$r) {			## adopt proposal ##

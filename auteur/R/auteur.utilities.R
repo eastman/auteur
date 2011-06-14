@@ -88,13 +88,13 @@ parlogger <- function(phy, init=FALSE, primary.parameter, parameters, parmBase, 
 #modified: 02.26.2011 to use spline() in computation of best prop.width
 
 calibrate.proposalwidth <-
-function(phy, dat, nsteps=100, model=c("BM","jumpBM","OU"), widths=NULL, lim=list(min=0, max=Inf)) {
+function(phy, dat, nsteps=100, model=c("BM","jumpBM","OU"), widths=NULL, lim=list(min=0, max=Inf), reml=FALSE) {
 	if(!withinrange(nsteps, 100, 1000)) {
 		if(nsteps>1000) nsteps=1000 else nsteps=100
 	}
 	if(is.null(widths)) widths=2^(-2:4)
 	if(model=="BM") {
-		acceptance.rates=sapply(widths, function(x) rjmcmc.bm(phy=phy, dat=dat, ngen=nsteps, prop.width=x, summary=FALSE, lim=lim, fileBase="propwidth")$acceptance.rate)
+		acceptance.rates=sapply(widths, function(x) rjmcmc.bm(phy=phy, dat=dat, ngen=nsteps, prop.width=x, summary=FALSE, lim=lim, reml=reml, fileBase="propwidth")$acceptance.rate)
 	} else if(model=="jumpBM") {
 #		acceptance.rates=sapply(widths, function(x) mcmc.levy(phy=phy, dat=dat, ngen=nsteps, prop.width=x, summary=FALSE, fileBase="propwidth")$acceptance.rate)
 	} else if(model=="OU") {
@@ -335,9 +335,14 @@ function(base.dirs, lab="combined"){
 #general phylogentic utility wrapping geiger:::treedata for checking data consistency
 #author: JM EASTMAN 2010
 
-prepare.data <-
-function(phy, data, SE) {
-	td <- treedata(phy, data, sort = TRUE)	
+prepare.data.bm <-
+function(phy, data, SE, reml=FALSE) {
+	td <- treedata(phy, data, sort = TRUE)
+
+	if(!is.binary.tree(td$phy) & reml) stop("REML cannot be computed on unresolved phylogeny.")
+
+	td$phy=reorder(td$phy, "cladewise")
+
 	if(any(SE!=0)) {
 		if(!is.null(names(SE))) {
 			se=rep(0,length(td$phy$tip.label))
@@ -359,7 +364,7 @@ function(phy, data, SE) {
 		names(SE)=td$phy$tip.label
 	}
 	
-	return(list(ape.tre=td$phy, orig.dat=td$data[,1], SE=SE))
+	return(list(ape.tre=td$phy, pruningwise.tre=reorder(td$phy, "pruningwise"), orig.dat=td$data[,1], SE=SE))
 }
 
 

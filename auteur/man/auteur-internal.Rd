@@ -7,6 +7,7 @@
 \alias{assess.lnR}
 \alias{assigndescendants}
 \alias{bm.lik.fn}
+\alias{bm.reml.fn}
 \alias{branchcol.plot} 
 \alias{checkrates}
 \alias{choose.one}
@@ -36,7 +37,7 @@
 \alias{nearest.pair}
 \alias{parlogger}
 \alias{pathlengths}
-\alias{prepare.data}
+\alias{prepare.data.bm}
 \alias{priorratio.exp}
 \alias{proposal.multiplier}
 \alias{proposal.slidingwindow}
@@ -45,6 +46,7 @@
 \alias{ou.lik.fn}
 \alias{oumat}
 \alias{ouweights}
+\alias{pic_variance}
 \alias{rtpois}
 \alias{splitormerge}
 \alias{splitrate}
@@ -57,6 +59,7 @@
 \alias{updatevcv}
 \alias{updateJvcv}
 \alias{updateLvcv}
+\alias{updatetree}
 \alias{ultrametricize}
 \alias{unexcludeddescendants}
 \alias{withinrange}

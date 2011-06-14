@@ -2,13 +2,14 @@
 \alias{rjmcmc.bm}
 \title{Bayesian sampling of shifts in trait-evolutionary rates: Brownian motion}
 \description{Implements reversible-jump Markov chain Monte Carlo sampling to identify shifts in the process of continuous trait evolution across phylogenetic trees}
-\usage{rjmcmc.bm(phy, dat, SE=0, ngen = 1000, sample.freq = 100, prob.mergesplit = 0.20, prob.root = 0.05, lambdaK = log(2), tuner = 0.05, constrainK = FALSE, prop.width = NULL, simplestart = FALSE, lim = list(min = 0, max = Inf), summary = TRUE, fileBase = "result")}
+\usage{rjmcmc.bm(phy, dat, SE=0, ngen = 1000, sample.freq = 100, reml=TRUE, prob.mergesplit = 0.20, prob.root = 0.05, lambdaK = log(2), tuner = 0.05, constrainK = FALSE, prop.width = NULL, simplestart = FALSE, lim = list(min = 0, max = Inf), summary = TRUE, fileBase = "result")}
 \arguments{
   \item{phy}{a phylogenetic tree of class 'phylo'}
   \item{dat}{a named vector of continuous trait values, associated with each species in \code{phy}; see \code{\link[geiger]{name.check}}}
   \item{SE}{a named vector of standard errors for each trait value; applied to all trait values if given a single value}
   \item{ngen}{number of sampling generations}
   \item{sample.freq}{frequency with which Markov samples are retained (e.g., \code{sample.freq=10} retains every tenth sample in the chain)}
+  \item{reml}{whether to use REstricted Maximum Likelihood for rapid computation (emphatically recommended for trees with more than a hundred tips)}
   \item{prob.mergesplit}{proportion of proposals that split or merge rates, thereby altering complexity of the evolutionary model}
   \item{prob.root}{proportion of proposals in which the root state is updated}
   \item{lambdaK}{the shape parameter for the Poisson prior-distribution on number of distinct rates}
@@ -91,7 +92,7 @@ print(head(posteriorsamples$rate.shifts))
 
 ## plot Markov sampled rates
 dev.new()
-shifts.plot(phy=phy, base=paste(r,"combined.rjmcmc",sep="."), burnin=0.5, legend=TRUE, pdf=FALSE, edge.width=2) 
+shifts.plot(phy=phy, base=paste(r,"combined.rjmcmc",sep="."), burnin=0.5, legend=TRUE, edge.width=2) 
 
 ## PASTE UNCOMMENTED FOLLOWING LINE TO DROP DIRECTORIES CREATED BY RJMCMC
  # unlink(dir(pattern=paste(r)),recursive=TRUE)

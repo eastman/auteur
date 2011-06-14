@@ -264,12 +264,12 @@ process.shifts<-function(phy, shifts, level) {
 }
 
 shifts.plot <-
-function(phy, base.dir, burnin=0, level=0.01, internal.only=FALSE, paint.branches=TRUE, legend=TRUE, pdf=TRUE, verbose=TRUE, lab="OUT", ...) {
+function(phy, base.dir, burnin=0, level=0.01, internal.only=FALSE, paint.branches=TRUE, legend=TRUE, verbose=TRUE, lab="OUT", ...) {
 	color.length=17
 	oldwd=getwd()
 	setwd(base.dir)
 	
-	if(pdf | verbose) {
+	if(verbose) {
 		out.base=paste(lab, paste("burnin", burnin, sep=""), paste("fq", level, sep=""), sep=".")
 		outdir=paste("./results")
 		if(!file.exists(outdir)) dir.create(outdir)
@@ -361,7 +361,7 @@ function(phy, base.dir, burnin=0, level=0.01, internal.only=FALSE, paint.branche
 		layout(matrix(c(1,2,1,3,1,4), 3, 2, byrow=TRUE), widths=c(20,5), respect=FALSE)
 	}
 	
-	if(pdf) pdf(file=paste(outdir, paste(out.base,"pdf",sep="."),sep="/"))
+#	if(pdf) pdf(file=paste(outdir, paste(out.base,"pdf",sep="."),sep="/"))
 	plot(phy, cex=CEX, lwd=0.4, edge.color=colors.branches, show.tip.label=TRUE, label.offset=strwidth(par("pch"),cex=1.25), no.margin=TRUE, ...)
 	NN=phy$edge[,2]
 	ll<-cc<-rr<-rep(0,length(NN))
@@ -411,7 +411,7 @@ function(phy, base.dir, burnin=0, level=0.01, internal.only=FALSE, paint.branche
 		# reset plotting device
 		invisible()
 	}
-	if(pdf) dev.off()
+#	if(pdf) dev.off()
 	
 	# GENERATE TABULAR OUTPUT of RESULTS
 	if(verbose) {
