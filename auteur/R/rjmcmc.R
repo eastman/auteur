@@ -39,12 +39,12 @@ rjmcmc.bm <- function (	phy, dat, SE=0, ngen=1000, sample.freq=100, reml=TRUE,
 	while(1) {
 		if(simplestart | is.numeric(constrainK)) {
 			if(is.numeric(constrainK)) {
-				init.rate	<- generate.starting.point(orig.dat, ape.tre, node.des, logspace=TRUE, K=constrainK, prop.width=prop.width)
+				init.rate	<- generate.starting.point(orig.dat, ape.tre, node.des, K=constrainK, prop.width=prop.width, model=model, lim=lim)
 			} else {
 				init.rate	<- list(values=rep(fit.continuous(ape.tre,orig.dat),length(ape.tre$edge.length)),delta=rep(0,length(ape.tre$edge.length)))
 			}
 		} else {
-			init.rate	<- generate.starting.point(orig.dat, ape.tre, node.des, logspace=TRUE, K=constrainK, prop.width=prop.width )
+			init.rate	<- generate.starting.point(orig.dat, ape.tre, node.des, K=constrainK, prop.width=prop.width, model=model, lim=lim)
 		}
 		
 		tmp.rates		<- init.rate$values			

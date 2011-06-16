@@ -217,56 +217,48 @@ function(ntip, i, mod.cur, mod.new, lnL, lnPrior, lnHastings, curCats, newCats, 
 #author: JM EASTMAN 2010
 
 generate.starting.point <-
-function(data, phy, node.des=NULL, logspace=TRUE, K=FALSE, prop.width) { 
+function(data, phy, node.des=NULL, K=FALSE, prop.width, model="BM", lim=c(min=-Inf, max=Inf)) { 
 
 	if(is.null(node.des)) {
 		node.des		<- sapply(unique(c(phy$edge[1,1],phy$edge[,2])), function(x) get.descendants.of.node(x, phy))
 		names(node.des) <- c(phy$edge[1,1], unique(phy$edge[,2]))
 	}
 	
+	if(model=="BM") {
+		init=fit.continuous(phy,data)
+	}
+	
+	# initialize shifts
 	nn=length(phy$edge.length)
 	ntip<-n<-Ntip(phy)
 	if(!K) nshifts=rtpois(1,log(ntip),nn) else nshifts=K-1
 	if(nshifts!=0) bb=sample(c(rep(1,nshifts),rep(0,nn-nshifts)),replace=FALSE) else bb=rep(0,nn)
 	names(bb)=phy$edge[,2]
 	shifts=as.numeric(names(bb)[bb==1])
-	if(!logspace) {
-		init.rate=mean(data)
-		vd=sapply(shifts, function(x) {
-				  z=c()
-				  xx=unlist(node.des[[which(names(node.des)==x)]])
-				  xx=xx[xx<=n]
-				  z=c(xx,x[x<=n])
-				  yy=c(mean(data[z]))
-				return(yy)})
-		values=c(vd, init.rate)
-	} else {
-		init.rate=fit.continuous(phy,data)
-		min.max=c(adjustrate(init.rate, prop.width), adjustrate(init.rate, prop.width))
-		values=runif(sum(bb)+1, min=min.max[min.max==min(min.max)], max=min.max[min.max==max(min.max)])
-	}
-	internal.shifts<-tip.shifts<-numeric(0)
-	internal.shifts=sort(shifts[shifts>ntip])
-	tip.shifts=shifts[shifts<=ntip]
 	
-	if(length(internal.shifts)==0 & length(tip.shifts)==0) {
-		vv=rep(values, nn)
-	} else {
-		vv=bb
-		vv[]=values[length(values)]
-		i=0
-		if(length(internal.shifts)!=0) {
+	# initialize values 
+	vv=numeric(length(bb))
+	values=sapply(1:(sum(bb)+1), function(x) proposal.multiplier(x, prop.width, lim)$v)
+	vv[]=values[1]
+	names(vv)=phy$edge[,2]
+	if(length(shifts)) {
+		values=values[2:length(values)]
+		internal.shifts=sort(shifts[shifts>ntip])
+		if(length(internal.shifts)) {
 			for(i in 1:length(internal.shifts)) {
-				d=node.des[which(names(node.des)==internal.shifts[i])]
-				vv[match(c(internal.shifts[i], unlist(d)), names(vv))]=values[i]
+				vv=assigndescendants(vv, node=internal.shifts[i], values[1], phy)
+				values=values[-1]
 			}
 		}
-		if(length(tip.shifts)!=0) {
+		tip.shifts=shifts[shifts<=ntip]
+		if(length(tip.shifts)) {
 			for(j in 1:length(tip.shifts)) {
-				vv[match(tip.shifts[j], names(vv))]=values[j+i]
+				vv[match(tip.shifts[j], names(vv))]=values[1]
+				values=values[-1]
 			}
 		}
 	}
+	
 	return(list(delta=unname(bb), values=unname(vv)))
 }
 
