@@ -334,7 +334,8 @@ function(phy, data, SE, reml=FALSE) {
 	td <- treedata(phy, data, sort = TRUE)
 
 	if(!is.binary.tree(td$phy) & reml) stop("REML cannot be computed on unresolved phylogeny.")
-
+	if(any(td$phy$edge.length==0)) stop("Zero-length branches encountered.")
+	
 	td$phy=reorder(td$phy, "cladewise")
 
 	if(any(SE!=0)) {

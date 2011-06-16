@@ -37,12 +37,8 @@ rjmcmc.bm <- function (	phy, dat, SE=0, ngen=1000, sample.freq=100, reml=TRUE,
 	if(is.numeric(constrainK) & (constrainK > (length(ape.tre$edge)-1) | constrainK < 1)) stop(paste("Constraint on ",primary.parameter, " is nonsensical. Ensure that constrainK is at least 1 and less than the number of edges in the tree.",sep=""))
 
 	while(1) {
-		if(simplestart | is.numeric(constrainK)) {
-			if(is.numeric(constrainK)) {
-				init.rate	<- generate.starting.point(orig.dat, ape.tre, node.des, K=constrainK, prop.width=prop.width, model=model, lim=lim)
-			} else {
-				init.rate	<- list(values=rep(fit.continuous(ape.tre,orig.dat),length(ape.tre$edge.length)),delta=rep(0,length(ape.tre$edge.length)))
-			}
+		if(simplestart) {
+			init.rate	<- generate.starting.point(orig.dat, ape.tre, node.des, K=1, prop.width=prop.width, model=model, lim=lim)
 		} else {
 			init.rate	<- generate.starting.point(orig.dat, ape.tre, node.des, K=constrainK, prop.width=prop.width, model=model, lim=lim)
 		}
@@ -60,6 +56,7 @@ rjmcmc.bm <- function (	phy, dat, SE=0, ngen=1000, sample.freq=100, reml=TRUE,
 	if(reml){
 		cur.root	<- NA
 		cur.vcv		<- NA
+		if(any(is.na(ic))) stop("NA encountered for some independent contrasts")
 		mod.cur		<- bm.reml.fn(pruningwise.tre, cur.rates[edgeorder], ic)
 	} else {
 		cur.root	<- adjustvalue(mean(orig.dat), prop.width)
