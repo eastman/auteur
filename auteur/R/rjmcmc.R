@@ -24,7 +24,7 @@ rjmcmc.bm <- function (	phy, dat, SE=0, ngen=1000, sample.freq=100, reml=TRUE,
 	}
 		
 ### prepare data for rjMCMC
-	dataList		<- prepare.data.bm(phy, dat, SE, reml)			
+	dataList		<- prepare.data.bm(phy, dat, SE, reml=reml)			
 	ape.tre			<- dataList$ape.tre		
 	pruningwise.tre <- dataList$pruningwise.tre
 	edgeorder		<- match(pruningwise.tre$edge[,2], ape.tre$edge[,2])
