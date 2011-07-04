@@ -92,7 +92,7 @@ print(head(posteriorsamples$rate.shifts))
 
 ## plot Markov sampled rates
 dev.new()
-shifts.plot(phy=phy, base=paste(r,"combined.rjmcmc",sep="."), burnin=0.5, legend=TRUE, edge.width=2) 
+shifts.plot(phy=phy, base.dir=paste(r,"combined.rjmcmc",sep="."), burnin=0.5, legend=TRUE, edge.width=2) 
 
 ## PASTE UNCOMMENTED FOLLOWING LINE TO DROP DIRECTORIES CREATED BY RJMCMC
  # unlink(dir(pattern=paste(r)),recursive=TRUE)

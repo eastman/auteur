@@ -2,18 +2,14 @@
 \alias{shifts.plot}
 \title{plotting of Bayesian posterior samples}
 \description{Plots a phylogeny with topological indication of posterior support for evolutionary shifts}
-\usage{shifts.plot(phy, base.dir, burnin = 0, level = 0.01, internal.only = FALSE, paint.branches = TRUE, legend=TRUE, verbose = TRUE, lab = "OUT", ...)}
+\usage{shifts.plot(phy, base.dir, burnin = 0, level = 0.01, paint.branches = TRUE, legend=TRUE, ...)}
 \arguments{
   \item{phy}{a phylogenetic tree of class 'phylo'}
   \item{base.dir}{a directory name, in which the results from \code{rjMCMC} are to be found}
   \item{burnin}{proportion of the chain to be treated as burnin (e.g., from 0 to 1)}
   \item{level}{a level of posterior support (from 0 to 1) for a branch-associated evolutionary shifts, above which results will be compiled}
-  \item{internal.only}{dictates whether tips are excluded from processing of evolutionary shifts (\code{internal.only=TRUE})}
   \item{paint.branches}{a logical switch governing whether branches in the phylogeny are to be shaded according to their model-averaged estimates}
   \item{legend}{a logical switch that determines whether keys for the generated symbols and colors are plotted}
-  \item{verbose}{a logical switch that determines whether additional diagnositics are generated for all branches receiving posterior support beyond 
-the defined \code{level}; if \code{verbose=TRUE}, results will be stored in a 'results' subdirectory}
-  \item{lab}{a string used to uniquely identify the results if created (with \code{verbose=TRUE})}
   \item{\dots}{additional arguments to be passed to \code{\link[ape]{plot.phylo}}}
 }
 \value{
@@ -59,7 +55,7 @@ pool.rjmcmcsamples(base.dirs=dirs, lab=r)
 
 ## plot Markov sampled rates
 dev.new()
-shifts.plot(phy=phy, base=paste(r,"combined.rjMCMC",sep="."), burnin=0.5, legend=TRUE, edge.width=2)
+shifts.plot(phy=phy, base.dir=paste(r,"combined.rjMCMC",sep="."), burnin=0.5, legend=TRUE, edge.width=2)
 
 ## PASTE UNCOMMENTED FOLLOWING LINE TO DROP DIRECTORIES CREATED BY RJMCMC
  # unlink(dir(pattern=paste(r)),recursive=TRUE)

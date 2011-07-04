@@ -264,21 +264,26 @@ process.shifts<-function(phy, shifts, level) {
 }
 
 shifts.plot <-
-function(phy, base.dir, burnin=0, level=0.01, internal.only=FALSE, paint.branches=TRUE, legend=TRUE, verbose=TRUE, lab="OUT", ...) {
+function(phy, base.dir, burnin=0, level=0.01, paint.branches=TRUE, legend=TRUE, ...) {
 	color.length=17
-	oldwd=getwd()
-	setwd(base.dir)
+#	oldwd=getwd()
+#	setwd(base.dir)
 	
-	if(verbose) {
-		out.base=paste(lab, paste("burnin", burnin, sep=""), paste("fq", level, sep=""), sep=".")
-		outdir=paste("./results")
-		if(!file.exists(outdir)) dir.create(outdir)
-	}
+#	if(verbose) {
+#		out.base=paste(lab, paste("burnin", burnin, sep=""), paste("fq", level, sep=""), sep=".")
+#		outdir=paste("./results")
+#		if(!file.exists(outdir)) dir.create(outdir)
+#	}
 	
 	# collect data
 	cat("READING estimates...\n")
-	posteriorsamples=NULL
-	if(length(dir(,pattern="posteriorsamples.rda"))==1) load(dir()[grep("posteriorsamples.rda",dir())]) else stop("Estimates cannot be located: .rda file appears missing")
+	resfiles=dir(base.dir, pattern="posteriorsamples.rda")
+	psfile=resfiles[grep("posteriorsamples.rda", resfiles)]
+	if(length(psfile==1)) {
+		posteriorsamples=get(load(paste(base.dir, psfile, sep="/"))) 
+	} else {
+		stop("Estimates cannot be located: .rda file appears missing")
+	}
 	shifts=posteriorsamples$shifts
 	burnin=ceiling(burnin*nrow(shifts))
 	shifts=shifts[-c(1:(burnin)),]
@@ -414,28 +419,29 @@ function(phy, base.dir, burnin=0, level=0.01, internal.only=FALSE, paint.branche
 #	if(pdf) dev.off()
 	
 	# GENERATE TABULAR OUTPUT of RESULTS
-	if(verbose) {
-		if(length(!is.null(shifts.res$descendants))) {
-		    dd=as.numeric(names(shifts.res$descendants))
-			for(nn in 1:length(dd)) {
-				write.table(c(dd[nn], shifts.res$descendants[[nn]]), file=paste(outdir, paste(lab,"shift.descendants.txt",sep="."), sep="/"), append=TRUE, quote=FALSE, row.names=FALSE, col.names=FALSE)
-			}
-		}
+#	if(verbose) {
+#		if(length(!is.null(shifts.res$descendants))) {
+#		    dd=as.numeric(names(shifts.res$descendants))
+#			for(nn in 1:length(dd)) {
+#				write.table(c(dd[nn], shifts.res$descendants[[nn]]), file=paste(outdir, paste(lab,"shift.descendants.txt",sep="."), sep="/"), append=TRUE, quote=FALSE, row.names=FALSE, col.names=FALSE)
+#			}
+#		}
 		
 		allres=data.frame(matrix(NA, nrow=nrow(phy$edge), ncol=3))
 		shift.direction=shift.direction[match(phy$edge[,2],all.nodes)]
 		shift.probability=cc
 		allres=data.frame(branch=phy$edge[,2],shift.direction,shift.probability)
-		if(nrow(allres)>0) {
-			cat("\n\n", rep(" ", 10), toupper("posterior summary"), "\n")
-			cat("\n")
-			table.print(allres, c(0,4,4), 0)
-			names(allres)=c("branch", "relative.shift.direction", "conditional.shift.probability")
-			write.table(allres, file=paste(outdir, paste(lab, "estimates.summary.txt", sep="."), sep="/"), quote=FALSE, row.names=FALSE)
-		}
-	}
-	setwd(oldwd)
-	return(list(estimates=ests, shifts=shifts))
+#		if(nrow(allres)>0) {
+#			cat("\n\n", rep(" ", 10), toupper("posterior summary"), "\n")
+#			cat("\n")
+#			table.print(allres, c(0,4,4), 0)
+#			names(allres)=c("branch", "relative.shift.direction", "conditional.shift.probability")
+#			write.table(allres, file=paste(outdir, paste(lab, "estimates.summary.txt", sep="."), sep="/"), quote=FALSE, row.names=FALSE)
+#		}
+#	}
+#	setwd(oldwd)
+#	return(list(estimates=ests, shifts=shifts))
+	return(list(res=allres, desc=shifts.res))
 }
 
 #general phylogenetic plotting utility, given a named vector or data.frame of values that can be associated with phy$edge[,2]
