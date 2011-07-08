@@ -2,7 +2,6 @@
 \alias{bm.phenogram}
 \alias{levy.phenogram}
 \alias{phenogram}
-%- Also NEED an '\alias' for EACH other topic documented here.
 \title{
 trait evolution along phylogenies}
 \description{
@@ -10,7 +9,6 @@ simulating incremental phenotypic evolution by Brownian motion or Levy process a
 \usage{
 phenogram(phy, model = c("levy", "bm"), alpha = 0, rate = 0.01, lambda = 0.5, sigma = 0.5, increments = 100, plot = TRUE, node.cex = 2, ...)
 }
-%- maybe also 'usage' for other objects documented here.
 \arguments{
   \item{phy}{
 a phylogenetic tree of class \code{phylo}}
@@ -32,39 +30,19 @@ the phenotypic values at nodes are plotted}
   \item{\dots}{
 additional arguments to be passed to \code{plot}}
 }
-\details{
-%%  ~~ If necessary, more details than the description above ~~
-}
 \value{
 This function generates a phenogram (if \code{plot=TRUE}) of evolutionary change in phenotype along a phylogeny and returns a table of 
 ancestral values (\code{phenotype}) for each node in the topology (\code{descendant}). Using the \code{\link[ape]{ape-package}} format 
 for edge identification, each \code{ancestor} and \code{descendant} is given an integer value. The split \code{time} of each node 
 is given in this last column of the returned table.  }
-\references{
-%% ~put references to the literature/web site here ~
-}
 \author{
-LJ Revell, LJ Harmon, and JM Eastman}
-\note{
-%%  ~~further notes~~
-}
-
-%% ~Make other sections like Warning with \section{Warning }{....} ~
-
-\seealso{
-%% ~~objects to See Also as \code{\link{help}}, ~~~
-}
+LJ Revell, JM Eastman}
 \examples{
+
 ## BROWNIAN MOTION ##
 phenogram(rcoal(20)->phy,model="bm",rate=0.005,increments=100,lwd=2)
 phenogram(phy,model="bm",rate=0.0075,increments=100,lwd=2)
 phenogram(phy,model="bm",rate=0.01,increments=100,lwd=2)
 phenogram(phy,model="bm",rate=0.01,increments=NULL,lwd=2)
-
-## LEVY MOTION ##
-phenogram(phy,model="levy",rate=0.1,lambda=0.25,sigma=0.75,increments=100,lwd=2)
-phenogram(phy,model="levy",rate=0.1,lambda=0.5,sigma=0.75,increments=100,lwd=2)
-phenogram(phy,model="levy",rate=0.1,lambda=2,sigma=0.75,increments=100,lwd=2)
-phenogram(phy,model="levy",rate=0.1,lambda=2,sigma=0.75,increments=NULL,lwd=2)
 
 }
