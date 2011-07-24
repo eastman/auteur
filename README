@@ -1,5 +1,9 @@
 This repository is intended for source **development**
 
-By mid-summer 2011, the auteur package should be available from http://cran.r-project.org/
+A stable versions of the auteur package is available from http://cran.r-project.org/.  In the R console, the command 
+	install.packages("auteur", type="source")
+will locally compile the package.  If this fails, try 
+	install.packages("auteur") 
+which will install a pre-compiled version. Contact <jonathan.eastman@gmail.com> if difficulties persist. 
 
-Until the package can be uploaded to the CRAN repository, please use provided 'downloads' as these are trusted versions of the R package -- all bets are off otherwise!  
+Development versions of the package will be maintained at gitHUB (https://github.com/eastman/auteur), yet note that trusted versions of the package will be posted to CRAN.  
